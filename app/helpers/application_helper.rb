@@ -1,5 +1,7 @@
 module ApplicationHelper
 
+  include ActsAsTaggableOn::TagsHelper
+
   # include TagsHelper
 
   # Sets the page title and outputs title if container is passed in.
@@ -53,11 +55,21 @@ module ApplicationHelper
     @devise_mapping ||= Devise.mappings[:user]
   end
 
+  def rtl_tags
+    stylesheet_link_tag('//cdn.rawgit.com/morteza/bootstrap-rtl/v3.3.4/dist/css/bootstrap-rtl.min.css', "data-turbolinks-track" => true) +
+    stylesheet_link_tag('rtl') +
+    javascript_include_tag('rtl', "data-turbolinks-track" => true)
+  end
+
+  def rtl?(locale_to_check = params[:locale])
+    rtl_locale?(locale_to_check || @browser_locale)
+  end
+
   def locale_select
     # options = I18n.available_locales.collect{ |l| [I18n.translate("i18n_languages.#{l}"),l] }
 
     tag = "<select name='lang' class='form-control' id='lang'>"
-    tag += "<option value='#{I18n.locale}'>Translate to a different language...</option>"
+    tag += "<option value='#{I18n.locale}'>#{t('translate', default: 'Translate to a different language')}...</option>"
 
     AppSettings['i18n.available_locales'].sort.each do |locale|
       selected = "selected" if "#{locale}" == params[:lang]
@@ -75,6 +87,13 @@ module ApplicationHelper
     end
   end
 
+  def tag_listing(tags, tagging_type = "message")
+    return unless teams? || tagging_type == "doc"
+    tags.each do |tag|
+      concat content_tag(:span, tag, style: badge_color_from_tag(tag),class: "label label-#{tagging_type}-tagging label-#{tag.first.downcase} #{'pull-right' if tagging_type == 'message'}")
+    end
+  end
+
   def login_with(with, redirect_to = "/#{I18n.locale}")
     provider = (with == "google_oauth2") ? "google" : with
     link_to(user_omniauth_authorize_path(with.to_sym, origin: redirect_to), class: ["btn","btn-block","btn-social","oauth","btn-#{provider}"], style: "color:white;", data: {provider: "#{provider}"}) do
@@ -85,13 +104,28 @@ module ApplicationHelper
   # Overrides any styles that are changed in AppSettings
   def css_overrides
     styles = "<style>\n"
-    styles += "   #top-bar {\n background-color: ##{AppSettings['css.top_bar']};\n  }\n" if AppSettings['css.top_bar'] != '3cceff'
-    styles += "   #home-search, #page-title, h1, ul.breadcrumb {\n background-color: ##{AppSettings['css.search_background']};\n  }\n" if AppSettings['css.search_background'] != 'feffe9'
-    styles += "   #get-help-wrapper {\n background-color: ##{AppSettings['css.still_need_help']};\n  }\n" if AppSettings['css.top_bar'] != 'FFDF91'
-    styles += "   div.add-form {\n background-color: ##{AppSettings['css.form_background']};\n  }\n" if AppSettings['css.form_background'] != 'F0FFF0'
-    styles += "   .navbar-default .navbar-brand, .navbar-default .navbar-nav > li > a {\n color: ##{AppSettings['css.link_color']};\n  }\n" if AppSettings['css.link_color'] != '004084'
+    styles += "   #top-bar, header {\n background-color: #{AppSettings['css.top_bar']};\n  }\n" if AppSettings['css.top_bar'] != '3cceff'
+    styles += "   .flat-main-panel, #home-search, #page-title, h1, ul.breadcrumb {\n background-color: #{AppSettings['css.search_background']};\n  }\n" if AppSettings['css.search_background'] != 'feffe9'
+    styles += "   #get-help-wrapper {\n background-color: #{AppSettings['css.still_need_help']};\n  }\n" if AppSettings['css.top_bar'] != 'FFDF91'
+    styles += "   div.add-form {\n background-color: #{AppSettings['css.form_background']};\n  }\n" if AppSettings['css.form_background'] != 'F0FFF0'
+    styles += "   .navbar-default .navbar-brand, .navbar-default .navbar-nav > li > a {\n color: #{AppSettings['css.link_color']};\n  }\n" if AppSettings['css.link_color'] != '004084'
     styles += "</style>"
     styles.html_safe
+  end
+
+  def theme_css
+    styles = "<style>\n"
+    styles += "   #top-bar, header {\n background-color: #{AppSettings['css.accent_color']};\n  }\n" unless AppSettings['css.accent_color'].blank?
+    styles += "   .flat-main-panel, #home-search, #page-title, h1, ul.breadcrumb {\n background-color: #{AppSettings['css.main_color']};\n  }\n" unless AppSettings['css.main_color'].blank?
+    styles += "\n</style>"
+    styles.html_safe #if AppSettings['design.css'] != ""
+  end
+
+  def css_injector
+    styles = "<style>\n"
+    styles += "#{AppSettings['design.css']}"
+    styles += "\n</style>"
+    styles.html_safe if AppSettings['design.css'] != ""
   end
 
   def get_path(screenshot)

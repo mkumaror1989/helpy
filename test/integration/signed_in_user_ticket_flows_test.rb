@@ -26,8 +26,8 @@ class SignedInUserTicketFlowsTest < ActionDispatch::IntegrationTest
     assert_difference('Topic.count', 1) do
       choose('Only support can respond (creates a private ticket)')
       fill_in('topic[name]', with: 'I got problems')
-      fill_in('post[body]', with: 'Please help me!!')
-      click_on('Start Discussion', disabled: true)
+      fill_in('topic[posts_attributes][0][body]', with: 'Please help me!!')
+      click_on('Create Ticket', disabled: true)
     end
 
     visit '/en/tickets/'
@@ -49,8 +49,8 @@ class SignedInUserTicketFlowsTest < ActionDispatch::IntegrationTest
       choose('Responses can come from support or the community (recommended)')
       select('Public Forum', from: "topic[forum_id]")
       fill_in('topic[name]', with: 'I got problems')
-      fill_in('post[body]', with: 'Please help me!!')
-      click_on('Start Discussion', disabled: true)
+      fill_in('topic[posts_attributes][0][body]', with: 'Please help me!!')
+      click_on('Create Ticket', disabled: true)
     end
 
     visit '/en/community/3-public-forum/topics'
@@ -88,7 +88,7 @@ class SignedInUserTicketFlowsTest < ActionDispatch::IntegrationTest
 
     forums.each do |forum|
       visit forum
-      click_on "New Discussion"
+      click_on "Start a Discussion"
       assert current_path == "/en/topics/new"
     end
 
@@ -142,14 +142,22 @@ class SignedInUserTicketFlowsTest < ActionDispatch::IntegrationTest
 
     assert_difference('Post.count', 1) do
       fill_in('topic[name]', with: 'I got problems')
-      fill_in('post[body]', with: 'Please help me!!')
-      click_on('Start Discussion', disabled: true)
+      fill_in('topic[posts_attributes][0][body]', with: 'Please help me!!')
+      click_on('Create Ticket', disabled: true)
     end
 
     visit '/en/tickets/'
     assert page.has_content?('Tickets')
     assert page.has_content?("##{Topic.last.id}- I got problems")
 
+  end
+
+  test "a signed in user should be able to flag a post for review from the public discussion view" do
+    sign_in
+
+    visit '/en/topics/5-new-public-topic/posts'
+    click_on "Flag for Review"
+    assert find("div#flag-modal").visible?
   end
 
 end

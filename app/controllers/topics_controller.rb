@@ -22,14 +22,21 @@
 #  updated_at       :datetime         not null
 #  locale           :string
 #  doc_id           :integer          default(0)
+#  channel          :string           default("email")
+#  kind             :string           default("ticket")
 #
 
 class TopicsController < ApplicationController
 
   before_action :authenticate_user!, :only => ['tickets','ticket']
   before_action :allow_iframe_requests
+  before_action :forums_enabled?, only: ['index','show']
+  before_action :topic_creation_enabled?, only: ['new', 'create']
+  before_action :get_all_teams, only: 'new'
+  before_action :get_public_forums, only: ['new', 'create']
 
   layout "clean", only: [:new, :index, :thanks]
+  theme :theme_chosen
 
   # TODO Still need to so a lot of refactoring here!
 
@@ -64,7 +71,7 @@ class TopicsController < ApplicationController
   def ticket
     @topic = current_user.topics.undeleted.where(id: params[:id]).first
     if @topic
-      @posts = @topic.posts.ispublic.chronologic.active.all
+      @posts = @topic.posts.ispublic.chronologic.active.all.includes(:topic, :user, :screenshot_files)
       @page_title = "##{@topic.id} #{@topic.name}"
       add_breadcrumb t(:tickets, default: 'Tickets'), tickets_path
       add_breadcrumb @page_title
@@ -77,85 +84,52 @@ class TopicsController < ApplicationController
   end
 
   def new
-    @page_title = t(:start_discussion, default: "Start a New Discussion")
-    @forums = Forum.ispublic.all
+    @page_title = t(:get_help_button, default: "Open a ticket")
     @topic = Topic.new
     @user = @topic.build_user unless user_signed_in?
+    @topic.posts.build
     add_breadcrumb @page_title
   end
 
   def create
-    # @page_title = t(:start_discussion, default: "Start a New Discussion")
-    # add_breadcrumb @page_title
-    # @title_tag = "#{AppSettings['settings.site_name']}: #{@page_title}"
-
     params[:id].nil? ? @forum = Forum.find(params[:topic][:forum_id]) : @forum = Forum.find(params[:id])
-    logger.info(@forum.name)
 
     @topic = @forum.topics.new(
       name: params[:topic][:name],
       private: params[:topic][:private],
-      doc_id: params[:topic][:doc_id] )
+      doc_id: params[:topic][:doc_id],
+      team_list: params[:topic][:team_list],
+      channel: 'web')
 
-    unless user_signed_in?
-      # User is not signed in, lets see if we can recognize the email address
-      @user = User.where(email: params[:topic][:user][:email]).first
-
-      if @user
-        logger.info("User found")
-        @topic.user_id = @user.id
-
-      else #User not found, lets build it
-
-        @user = @topic.build_user
-
-        @token, enc = Devise.token_generator.generate(User, :reset_password_token)
-        @user.reset_password_token = enc
-        @user.reset_password_sent_at = Time.now.utc
-
-        @user.name = params[:topic][:user][:name]
-        @user.login = params[:topic][:user][:email].split("@")[0]
-        @user.email = params[:topic][:user][:email]
-        @user.password = User.create_password
-        built_user = true
-      end
-
-    else
-      @user = current_user
-      @topic.user_id = @user.id
+    if recaptcha_enabled?
+      render :new && return unless verify_recaptcha(model: @topic)
     end
 
-    if @user.save && @topic.save
-
+    if @topic.create_topic_with_user(params, current_user)
+      @user = @topic.user
       @post = @topic.posts.create(
-        :body => params[:post][:body],
+        :body => params[:topic][:posts_attributes]["0"][:body],
         :user_id => @user.id,
         :kind => 'first',
-        :screenshots => params[:topic][:screenshots])
+        :screenshots => params[:topic][:screenshots],
+        :attachments => params[:topic][:posts_attributes]["0"][:attachments])
 
-      if built_user == true && !user_signed_in?
-        UserMailer.new_user(@user, @token).deliver_later
+      if !user_signed_in?
+        UserMailer.new_user(@user.id, @user.reset_password_token).deliver_later
       end
 
       # track event in GA
-      @tracker.event(category: 'Request', action: 'Post', label: 'New Topic')
-      @tracker.event(category: 'Agent: Unassigned', action: 'New', label: @topic.to_param)
+      tracker('Request', 'Post', 'New Topic')
+      tracker('Agent: Unassigned', 'New', @topic.to_param)
 
       if @topic.private?
-        redirect_to params[:from] == 'widget' ? widget_thanks_path : topic_thanks_path
+        redirect_to topic_thanks_path
       else
-        # redirect_to @topic.doc_id.nil? ? topic_posts_path(@topic) : doc_path(@topic.doc_id)
         redirect_to topic_posts_path(@topic)
       end
     else
-      if params[:from] == 'widget'
-        @widget = true
-        render 'new', layout: 'widget'
-      else
-        render 'new'
-      end
+      render 'new'
     end
-
   end
 
   def thanks
@@ -178,4 +152,19 @@ class TopicsController < ApplicationController
   def tag
     @topics = Topic.ispublic.tag_counts_on(:tags)
   end
+
+  private
+
+  def post_params
+    params.require(:post).permit(
+      :body,
+      :kind,
+      {attachments: []}
+    )
+  end
+
+  def get_public_forums
+    @forums = Forum.ispublic.all
+  end
+
 end

@@ -10,6 +10,42 @@ class Admin::TopicsControllerTest < ActionController::TestCase
 
   %w(admin agent).each do |admin|
 
+    ### Topic split
+    test "an #{admin} should be able to split a ticket" do
+      sign_in users(admin.to_sym)
+
+      post :split_topic, topic_id: 1, post_id: 1
+      assert_response :redirect
+    end
+
+    test "an #{admin} splitting a topic should create a new topic" do
+      sign_in users(admin.to_sym)
+
+      assert_difference "Topic.count", 1 do
+        post :split_topic, topic_id: 1, post_id: 1
+      end
+    end
+
+    test "an #{admin} splitting a topic should create 2 new posts" do
+      sign_in users(admin.to_sym)
+
+      assert_difference "Post.count", 2 do
+        post :split_topic, topic_id: 1, post_id: 1
+      end
+    end
+
+    test "#{admin}: split topic owner should be owner of post split from" do
+      sign_in users(admin.to_sym)
+      post :split_topic, topic_id: 4, post_id: 4
+      assert_equal Topic.all.last.user_id, Post.find(4).user_id
+    end
+
+    test "#{admin}: split topic should have the same channel as the original topic" do
+      sign_in users(admin.to_sym)
+      post :split_topic, topic_id: 4, post_id: 4
+      assert_equal Topic.all.last.channel, Post.find(4).topic.channel
+    end
+
     ### Topic Views
 
     test "an #{admin} should be able to see a list of topics via standard request" do
@@ -17,6 +53,23 @@ class Admin::TopicsControllerTest < ActionController::TestCase
 
       get :index, { status: "open" }
       assert_not_nil assigns(:topics)
+      assert_template "admin/topics/index"
+      assert_response :success
+    end
+
+    test "an #{admin} should be able to filter topics by providing a group parameter" do
+      sign_in users(admin.to_sym)
+
+      # Assign agent and topic to a group
+      agent = users(admin)
+      topic = topics(:private)
+      topic.current_status = "open"
+      topic.team_list = "test"
+      topic.save!
+
+      get :index, { status: "open", team: 'test' }
+      assert_not_nil assigns(:topics)
+      assert_equal 1, assigns(:topics).size
       assert_template "admin/topics/index"
       assert_response :success
     end
@@ -123,6 +176,32 @@ class Admin::TopicsControllerTest < ActionController::TestCase
       assert_response :success
     end
 
+    test "an #{admin} should be able to merge multiple topics into one" do
+      sign_in users(admin.to_sym)
+      assert_difference("Topic.count",1) do
+        xhr :get, :merge_tickets, { topic_ids: [2,3] }
+      end
+      assert_response :success
+    end
+
+    # Test assigning tags to a topic
+
+    test "an #{admin} should be able to assign and change tags for a topic" do
+      sign_in users(admin.to_sym)
+      xhr :patch, :update_tags, { id: 2, topic: { tag_list: 'hello, hi' } }
+      assert_equal 2, Topic.find(2).tag_list.count
+      assert_equal "hi", Topic.find(2).tag_list.first
+    end
+
+    test "an #{admin} should be able to remove tags for a topic" do
+      sign_in users(admin.to_sym)
+      t = Topic.find(2)
+      t.tag_list = "tag1, tag2"
+      t.save
+      xhr :patch, :update_tags, { id: 2, topic: { tag_list: '' } }
+      assert_equal 0, Topic.find(2).tag_list.count
+    end
+
     ### testing new discussion creation and lifecycle
 
     test "an #{admin} should be able to open a new discussion for a new user" do
@@ -131,12 +210,12 @@ class Admin::TopicsControllerTest < ActionController::TestCase
       assert_response :success
     end
 
-    test "an #{admin} should be able to create a new private discussion for a new user" do
+    test "an #{admin} should be able to create a new private discussion for a new user with an email" do
       sign_in users(admin.to_sym)
       assert_difference "Topic.count", 1 do
         assert_difference "Post.count", 1 do
           assert_difference "User.count", 1 do
-            assert_difference "ActionMailer::Base.deliveries.size", 1 do
+            assert_difference "ActionMailer::Base.deliveries.size", 2 do
               xhr :post, :create, topic: { user: { name: "a user", email: "anon@test.com" }, name: "some new private topic", post: { body: "this is the body" }, forum_id: 1 }
             end
           end
@@ -144,12 +223,38 @@ class Admin::TopicsControllerTest < ActionController::TestCase
       end
     end
 
+    test "an #{admin} should be able to create a new private discussion for a new user with a phone number" do
+      sign_in users(admin.to_sym)
+      assert_difference "Topic.count", 1 do
+        assert_difference "Post.count", 1 do
+          assert_difference "User.count", 1 do
+            xhr :post, :create, topic: { user: { name: "a user", home_phone: '34526668', email: "change@me-34526668.com" }, name: "some new private topic", post: { body: "this is the body" }, forum_id: 1 }
+          end
+        end
+      end
+
+      assert_equal "34526668", User.last.home_phone
+    end
+
+    test "an #{admin} created private discussion should have channel" do
+      sign_in users(admin.to_sym)
+      assert_difference "Topic.count", 1 do
+        assert_difference "Post.count", 1 do
+          assert_difference "User.count", 1 do
+            xhr :post, :create, topic: { user: { name: "a user", work_phone: '34526668', email: "change@me-34526668.com" }, name: "some new private topic", post: { body: "this is the body" }, channel: "phone", forum_id: 1 }
+          end
+        end
+      end
+
+      assert_equal "phone", Topic.last.channel
+    end
+
     test "an #{admin} should be able to create a new private discussion for an existing user" do
       sign_in users(admin.to_sym)
       assert_difference "Topic.count", 1 do
         assert_difference "Post.count", 1 do
           assert_no_difference "User.count" do
-            assert_difference "ActionMailer::Base.deliveries.size", 1 do
+            assert_difference "ActionMailer::Base.deliveries.size", 2 do
               xhr :post, :create, topic: { user: { name: "Scott Smith", email: "scott.smith@test.com" }, name: "some new private topic", post: { body: "this is the body" }, forum_id: 1 }
             end
           end
@@ -157,16 +262,76 @@ class Admin::TopicsControllerTest < ActionController::TestCase
       end
     end
 
-    test "an #{admin}viewing a new discussion should change the status to PENDING" do
-      sign_in users(admin.to_sym)
-      @ticket = Topic.find(6)
+    # NOTE: THIS BEHAVIOR WAS REVERSED BASED ON USER FEEDBACK THAT IT WAS HARD TO
+    # FIND DISCUSSIONS AFTER THEY WERE VIEWED, LEFT TEST JUST IN CASE
+    #
+    # test "an #{admin}viewing a new discussion should change the status to PENDING" do
+    #   sign_in users(admin.to_sym)
+    #   @ticket = Topic.find(6)
+    #
+    #   xhr :get, :show, { id: @ticket.id }
+    #
+    #   #reload object:
+    #   @ticket = Topic.find(6)
+    #   assert @ticket.current_status == "pending", "ticket status did not change to pending"
+    # end
+  end
 
-      xhr :get, :show, { id: @ticket.id }
+  test "an agent that is assigned to a group should only see search topics from that group" do
+    sign_in users(:agent)
 
-      #reload object:
-      @ticket = Topic.find(6)
-      assert @ticket.current_status == "pending", "ticket status did not change to pending"
-    end
+    # Assign agent and topic to a group
+    agent = users(:agent)
+    agent.team_list = "test"
+    agent.save!
+
+    topic = topics(:private)
+    topic.current_status = "open"
+    topic.team_list = "test"
+    topic.save!
+
+    get :index, { status: "open" }
+    assert_not_nil assigns(:topics)
+    assert_equal 1, assigns(:topics).size
+    assert_template "admin/topics/index"
+    assert_response :success
+  end
+
+  test "an agent that is assigned to a group should not see topics from another group" do
+    sign_in users(:agent)
+
+    # Assign agent and topic to a group
+    agent = users(:agent)
+    agent.team_list = "test"
+    agent.save!
+
+    topic = topics(:private)
+    topic.current_status = "open"
+    topic.team_list = "aomething else"
+    topic.save!
+
+    get :index, { status: "open" }
+    assert_equal 0, assigns(:topics).size
+    assert_template "admin/topics/index"
+    assert_response :success
+  end
+
+  test "an agent that is assigned to a group should not be able to view a topic from another group" do
+    sign_in users(:agent)
+
+    # Assign agent and topic to a group
+    agent = users(:agent)
+    agent.team_list = "test"
+    agent.save!
+
+    topic = topics(:private)
+    topic.current_status = "open"
+    topic.team_list = "aomething else"
+    topic.save!
+
+    get :show, { id: topic.id }
+    assert_template "admin/topics/show"
+    assert_response 403
   end
 
   %w(user editor).each do |unauthorized|

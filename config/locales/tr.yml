@@ -1,3 +1,5 @@
+# TRANSLATOR(s): Emin
+
 tr:
   language_name: 'Türkçe'
   root: &root 'Ana Sayfa'
@@ -59,6 +61,7 @@ tr:
   # Knowledgebase
   written_by: "Yazan:"
   last_edited: "Son Düzenlenen"
+  asked_before: "Sorunuzun daha önce yanıtlandı? Biz bu benzer olabilir düşünüyorum"
 
   # Tickets
   tickets: "Destek Talepleri"
@@ -76,7 +79,14 @@ tr:
 
   # footer
   powered_by: "Helpy tarafından güçlendirilmiştir. Bir Açık Kaynak Destek Sistemi."
-  get_your_copy: "Github'dan bir kopyasını alın"
+  get_your_copy: "GitHub'dan bir kopyasını alın"
+  # version: "Version:"
+
+  # flag
+  #flag_for_review:
+  #flag_post_for_review:
+  #flag_post_placeholder:
+  #flag:
 
   # devise/sessions/new
   login: Giriş yap
@@ -122,6 +132,8 @@ tr:
   private: gizli
   public: herkese açık
   save_changes: Değişiklikleri Kaydet
+  #merge: Merge
+  #merge_confirm: Are you sure you want to merge these tickets?
 
   # Discussion controls
   change_status: Durumu Değiştir
@@ -138,21 +150,44 @@ tr:
 
   # Discussion messages
   reopen_message: "Bu talep destek personeli tarafından yeniden açıldı"
-  close_message: "Bu talep destek personeli tarafından kapatıldı."
+  closed_message: "Bu talep destek personeli tarafından kapatıldı."
   trash_message: "Bu destek talebi silindi."
   assigned_message: "Görüşme %{assigned_to} isimli destek personeline aktarışmıştır."
+  # assigned_group: "This ticket has been assigned to %{assigned_group}."
+  # converted_to_ticket: "This discussion was converted to a private ticket."
+  # converted_to_topic: "This ticket was converted to an open discussion and moved to %{forum_name}."
+  # tagged_with: "This ticket was tagged with %{tagged_with}"
+  # notes_hidden: "There are %{hidden_notes} internal notes for this ticket. You can view them by clicking anywhere in this note!"
 
   # User Admin
+  # users: Users
+  # account: Account
   contact_info: İletişim
   social_info: Sosyal
   edit_user: Kullanıcıyı Düzenle
   work_phone: İş
   cell_phone: Cep
 
+  # Priorities
+  # select_priority: Select Priority
+  # vip_priority: VIP
+  # high_priority: High
+  # normal_priority: Normal
+  # low_priority: Low
+
   # User search results
   users_found:
     one: "%{query} isimli 1 kullanıcı bulundu"
     other: "%{query} isimli %{count} kullanıcı bulundu"
+
+  # Invite users
+  # invite_users: "Invite New Users"
+  # invite_emails: "Email Addresses"
+  # invite_emails_placeholder: "Type one or more email addresses to send an invitation to"
+  # invite_message: "Message"
+  # invite_message_placeholder: "An optional message that will be sent to the new users"
+  # invite_role: "Role for Invited Users"
+  # send_invite: "Send Invite"
 
   # Discussion View
   asked_a_question: "%{user_name} bir soru sordu..."
@@ -162,6 +197,7 @@ tr:
   select_common: Genel Cevap Seçin
   reply: Yanıtla
   internal_note: Dahili Not
+  # mark_as_resolved: Mark as resolved
   upvote:
     one: "Oy | %{count}"
     other: "Oy | %{count}"
@@ -187,12 +223,23 @@ tr:
   published_content: "Yayınlanan"
   additional_settings: "Ek Ayarlar"
   content_status: "İçerik Durumu"
+  # convert_content: 'Turn post into content'
+  # upload_image: 'Upload Image'
+  # new_discussion: 'Create new discussion from this'
+  # new_discussion_post: 'Discussion #%{topic_id} was created from this one'
+  # new_discussion_topic_title: 'Split from #%{original_id}-%{original_name}'
+  # change_owner_note: 'The creator of this topic was changed from %{old} to %{new}'
 
   # Communities
   new_community: Yeni Topluluk Oluştur
   create_new_community: Yeni Topluluk Oluştur
+  # layout_select: Select Format
+  # layout_table: Table
+  # layout_grid: Grid
+  # layout_qna: Q&A
 
   # Mail messages
+  new_user_subject: "Welcome to %{site_name}"
   hello: "Merhaba %{user_name}"
   new_user: "Bizimle iletişime geçtiğiniz için teşekkür ederiz. Mesajınız destek ekibimiz tarafından alındı, sizinle en kısa zamanda iletişime geçeceğiz."
   account_generated: "Sizin için bir hesap oluşturuldu. Giriş yapmak için lütfen bu bağlantıyı kullanın:"
@@ -207,6 +254,36 @@ tr:
   design: "Dizayn"
   international: "Uluslararası"
   widget: "Gömülebilir Bileşen"
+  # common_replies: "Common Replies"
+  # integrations: "Integrations"
+
+  # Keyboard Shortcuts
+  # shortcut_then: "then"
+  # listing_views: "Listing views"
+  # keyboard_shortcuts: "Keyboard Shortcuts"
+  # show_new_tickets: "Show new tickets"
+  # show_all_tickets: "Show all tickets"
+  # show_open_tickets: "Show open tickets"
+  # show_tickets_assigned_to_you: "Show tickets assigned to you"
+  # show_pending_tickets_assigned_to_you: "Show pending tickets assigned to you"
+  # show_closed_tickets: "Show closed tickets"
+  # search_for_tickets: "Search for tickets"
+  # viewing_tickets: "View tickets"
+  # select_previous_ticket: "Select previous ticket"
+  # select_next_ticket: "Select next ticket"
+  # view_selected_ticket: "View selected ticket"
+  # jump_to_a_specific_ticket_number: "Jump to a specific ticket number"
+  # ticket_actions: "Ticket actions"
+  # assign_the_ticket: "Assign ticket"
+  # move_the_ticket: "Move ticket"
+  # expand_the_ticket_thread: "Expand ticket thread"
+  # reply_to_the_ticket: "Reply to the ticket"
+  # add_an_internal_note: "Add an internal note"
+  # change_ticket_status: "Change ticket status"
+  # associate_with_a_group: "Associate with a group"
+  # ticket_status: "Ticket status"
+  # mark_resolved: "Mark as resolved"
+  # reopen_ticket: "Reopen ticket"
 
   activerecord:
     attributes:
@@ -219,6 +296,7 @@ tr:
         cell_phone: Cep
         city: Şehir
         state: Eyalet
+        # signature: Signature
       topic:
         name: Konu
       post:
@@ -243,6 +321,9 @@ tr:
         name: İsim
         description: Açıklama
         private: Özel
+        # layout: Layout
+        # allow_topic_voting: Allow topic voting?
+        # allow_post_voting: Allow post voting?
 
     helpers:
       submit:
@@ -259,6 +340,8 @@ tr:
     docs:
       root: *root
     forums:
+      root: *root
+    locales:
       root: *root
     topics:
       root: *root
@@ -281,3 +364,14 @@ tr:
       new: "Yeni %{model}"
       delete: "%{model} Sil"
 
+  number:
+    human:
+      decimal_units:
+        format: "%n%u"
+        units:
+          unit: ""
+          thousand: k
+          million: M
+          billion: B
+          trillion: T
+          quadrillion: Q

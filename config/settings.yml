@@ -5,6 +5,8 @@ site_url: http://support.yourdomain.com # This is the URL of your support site
 tickets: true
 forums: true
 knowledgebase: true
+teams: true
+welcome_email: true
 
 # Site Settings (These have been moved into the admin UI and you should change them there!)
 parent_site: /parent-redirect.html # This tells Helpy how to provide a link back to your main site
@@ -20,6 +22,10 @@ app_mini_logo: logo.png # Full or partial url for app mini logo
 # Analytics and Tracking
 google_analytics_id: #Enter your analytics ID
 send_usage_data: true
+
+#Recaptcha secret keys
+recaptcha_site_key: #Enter your site key
+recaptcha_api_key: #Enter your api  key
 
 # Mail specific settings:
 # See http://support.helpy.io/en/knowledgebase/11-Installing-Helpy/docs/14-Setting-up-your-Helpy-installation-to-send-and-receive-email

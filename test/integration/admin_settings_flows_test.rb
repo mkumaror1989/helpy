@@ -16,14 +16,13 @@ class AdminSettingsFlowsTest < ActionDispatch::IntegrationTest
   end
 
   test 'an admin should be able to modify site settings and see those changes on the support site' do
-    visit('/admin/settings')
+    visit('/admin/settings/general')
     assert page.has_content?('Settings'), 'Missing header'
 
     # Now make changes to all settings from defaults and make sure those changes are on the live site
     fill_in('settings.site_name', with: 'xyz')
     fill_in('settings.parent_site', with: 'xyz')
     fill_in('settings.parent_company', with: 'xyz')
-    fill_in('settings.google_analytics_id', with: 'xyz')
     click_on 'Save Settings'
 
     visit('/en')
@@ -37,7 +36,7 @@ class AdminSettingsFlowsTest < ActionDispatch::IntegrationTest
   end
 
   test 'an admin should be able to enable or disable i18n and be able to browse to those locales on the site' do
-    visit('/admin/settings')
+    visit('/admin/settings/i18n')
 
     assert page.has_content?('Settings'), 'Missing header'
 
@@ -61,24 +60,19 @@ class AdminSettingsFlowsTest < ActionDispatch::IntegrationTest
   end
 
   test 'an admin should be able to alter the logo images used' do
-    visit('/admin/settings')
+    visit('/admin/settings/design')
 
     assert page.has_content?('Design'), 'Missing header'
 
-    fill_in('Header Logo', with: 'logo-test.png')
-    fill_in('Footer Logo', with: 'logo-test.png')
-    fill_in('Favicon', with: 'favicon-test.png')
+    fill_in('design.header_logo', with: '/uploads/logos/logo-test.png')
+    fill_in('design.favicon', with: '/uploads/logos/favicon-test.ico')
     click_on 'Save Settings'
 
     visit('/en')
     sleep(1)
 
     within('a.navbar-brand') do
-      assert_equal '/images/logo-test.png', page.find('img')['src']
-    end
-
-    within('div#footer') do
-      assert_equal '/images/logo-test.png', page.find('img')['src']
+      assert_equal '/uploads/logos/logo-test.png', page.find('img')['src']
     end
 
     # TODO: Figure out how to test the change of favicon

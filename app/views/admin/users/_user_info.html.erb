@@ -1,17 +1,16 @@
 <div id="user-info" class="row">
     <div class='col-md-12 text-center' id='user-info-image'>
-      <%#= image_tag(@topic.user.image_url, width: '90px', class: 'img-circle') %>
-      <%= avatar_image(@topic.user, size=90) %>
+      <%= link_to avatar_image(@topic.user, size=90), admin_user_path(@topic.user), remote: true %>
     </div>
 </div>
 <div class="row">
   <div class='col-md-12' id='user-info-info'>
     <div id="user-contact-info" class="user-info">
-      <div class="tiny-header"><%= @topic.user.name? ? @topic.user.name.titleize : @topic.user.email %></div>
+      <div class="tiny-header"><%= @topic.user_name? ? @topic.user_name.titleize : @topic.user.email %></div>
       <span class="small">
+        <%= "#{t(:account_number, default: 'Account:')} #{@topic.user.account_number}<br/>".html_safe if @topic.user.account_number.present? %>
         <%= @topic.user.company.titleize unless @topic.user.company.nil? %><br/>
-        <%= @topic.user.city.titleize + ', ' unless @topic.user.city.nil? %> <%= @topic.user.state.titleize unless @topic.user.state.nil? %>
-        <%#= @topic.user.country.titleize unless @topic.user.country.nil? %>
+        <%= @topic.user.city.titleize + ', ' unless @topic.user.city.nil? %> <%= @topic.user.state.titleize unless @topic.user.state.nil? %> <%= @topic.user.zip %>
       </span>
     </div>
     <div id="user-contact-info" class="user-info">
@@ -23,11 +22,12 @@
 
 
     <div id="user-tickets" class="user-info">
-      <div class="tiny-header">Discussions:</div>
+      <div class="tiny-header"><%= t(:discussions, default: "Discussions") %>:</div>
       <ul class='list-unstyled'>
-      <% @topic.user.topics.isprivate.each do |ticket| %>
-        <li><%= link_to("##{ticket.id}- #{ticket.name}", admin_topic_path(ticket), remote: true) %><span class="status pull-right"><%#= badge_for_status(ticket.current_status) %></span>
+      <% @topic.user.topics.recent.each do |ticket| %>
+        <li><%= link_to("##{ticket.id}- #{ticket.name}", admin_topic_path(ticket), remote: true) %></li>
       <% end %>
+      <li><%= link_to("See more", admin_user_path(@topic.user), remote: true) if @topic.user.topics.count > 15 %></li>
       </ul>
     </div>
   </div>

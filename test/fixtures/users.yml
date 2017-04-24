@@ -42,6 +42,22 @@
 #  last_sign_in_ip        :inet
 #  provider               :string
 #  uid                    :string
+#  invitation_token       :string
+#  invitation_created_at  :datetime
+#  invitation_sent_at     :datetime
+#  invitation_accepted_at :datetime
+#  invitation_limit       :integer
+#  invited_by_id          :integer
+#  invited_by_type        :string
+#  invitations_count      :integer          default(0)
+#  invitation_message     :text
+#  time_zone              :string           default("UTC")
+#  profile_image          :string
+#  notify_on_private      :boolean          default(FALSE)
+#  notify_on_public       :boolean          default(FALSE)
+#  notify_on_reply        :boolean          default(FALSE)
+#  account_number         :string
+#  priority               :string           default("normal")
 #
 
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
@@ -55,6 +71,9 @@ admin:
   admin: true
   role: admin
   encrypted_password: $2a$10$NDaQ2l6.7dqkWTbqZGX6RuokqiUrfrcouiKc3YCGKIvz9KxhPt7uK
+  notify_on_private: true
+  notify_on_public: true
+  notify_on_reply: true
 
 user:
   id: 2
@@ -94,6 +113,9 @@ another_admin:
   admin: false
   role: admin
   encrypted_password: $2a$10$NDaQ2l6.7dqkWTbqZGX6RuokqiUrfrcouiKc3YCGKIvz9KxhPt7uK
+  notify_on_private: true
+  notify_on_public: true
+  notify_on_reply: true
 
 agent:
   id: 6
@@ -104,6 +126,9 @@ agent:
   admin: false
   role: agent
   encrypted_password: $2a$10$NDaQ2l6.7dqkWTbqZGX6RuokqiUrfrcouiKc3YCGKIvz9KxhPt7uK
+  notify_on_private: true
+  notify_on_public: true
+  notify_on_reply: true
 
 editor:
   id: 7
@@ -113,4 +138,15 @@ editor:
   email: editor@test.com
   admin: false
   role: editor
+  encrypted_password: $2a$10$NDaQ2l6.7dqkWTbqZGX6RuokqiUrfrcouiKc3YCGKIvz9KxhPt7uK
+
+user_inactive:
+  id: 8
+  login: user_inactive
+  identity_url: MyString
+  name: User Inactive
+  email: inactive@test.com
+  admin: false
+  role: user
+  active: false
   encrypted_password: $2a$10$NDaQ2l6.7dqkWTbqZGX6RuokqiUrfrcouiKc3YCGKIvz9KxhPt7uK

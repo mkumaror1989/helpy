@@ -42,6 +42,22 @@
 #  last_sign_in_ip        :inet
 #  provider               :string
 #  uid                    :string
+#  invitation_token       :string
+#  invitation_created_at  :datetime
+#  invitation_sent_at     :datetime
+#  invitation_accepted_at :datetime
+#  invitation_limit       :integer
+#  invited_by_id          :integer
+#  invited_by_type        :string
+#  invitations_count      :integer          default(0)
+#  invitation_message     :text
+#  time_zone              :string           default("UTC")
+#  profile_image          :string
+#  notify_on_private      :boolean          default(FALSE)
+#  notify_on_public       :boolean          default(FALSE)
+#  notify_on_reply        :boolean          default(FALSE)
+#  account_number         :string
+#  priority               :string           default("normal")
 #
 
 module UsersHelper
@@ -50,24 +66,26 @@ module UsersHelper
     if user.thumbnail == "" && user.avatar.nil?
       user.gravatar_url(:size => 60)
     elsif user.avatar.nil? == false
-      "http://res.cloudinary.com/helpy-io/image/upload/c_thumb,w_#{size},h_#{size}/#{user.avatar.path}"
+      "https://res.cloudinary.com/helpy-io/image/upload/c_thumb,w_#{size},h_#{size}/#{user.avatar.path}"
     else
       user.thumbnail
     end
   end
 
-  def avatar_image(user, size=40)
-
-    if user.avatar.nil? == false
+  def avatar_image(user, size=40, font=16)
+    return if user.nil?
+    if user.avatar.present?
       unless Cloudinary.config.cloud_name.nil?
-        image_tag("http://res.cloudinary.com/#{Cloudinary.config.cloud_name}/image/upload/c_thumb,w_#{size},h_#{size}/#{user.avatar.path}", width: "#{size}px", class: 'img-circle')
+        image_tag("https://res.cloudinary.com/#{Cloudinary.config.cloud_name}/image/upload/c_thumb,w_#{size},h_#{size}/#{user.avatar.path}", width: "#{size}px", class: 'img-circle')
       else
-        image_tag('', data: { name: "#{user.name}", width: "#{size}", height: "#{size}", 'font-size' => '16', 'char-count' => 2}, class: 'profile img-circle')
+        image_tag('', data: { name: "#{user.name}", width: "#{size}", height: "#{size}", 'font-size' => font, 'char-count' => 2}, class: 'profile img-circle')
       end
-    elsif !user.thumbnail.nil?
+    elsif user.profile_image.present?
+      image_tag(user.profile_image.url, width: "#{size}px", class: 'img-circle')
+    elsif user.thumbnail.present?
       image_tag(user.thumbnail, width: "#{size}px", class: 'img-circle')
     else
-      image_tag('', data: { name: "#{user.name}", width: "#{size}", height: "#{size}", 'font-size' => '16', 'char-count' => 2}, class: 'profile img-circle')
+      image_tag('', data: { name: "#{user.name}", width: "#{size}", height: "#{size}", 'font-size' => font, 'char-count' => 2}, class: 'profile img-circle')
     end
 
   end

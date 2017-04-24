@@ -22,6 +22,8 @@
 #  updated_at       :datetime         not null
 #  locale           :string
 #  doc_id           :integer          default(0)
+#  channel          :string           default("email")
+#  kind             :string           default("ticket")
 #
 
 require 'test_helper'
@@ -36,6 +38,13 @@ class TopicsControllerTest < ActionController::TestCase
     get :index, forum_id: 3, locale: :en
     assert_not_nil assigns(:topics)
     assert_response :success, 'Should see a list of topic in the forum'
+  end
+
+  test "a browsing user should not index of topics if forums are not enabled" do
+    AppSettings['settings.forums'] = "0"
+    assert_raises(ActionController::RoutingError) do
+      get :index, forum_id: 3, locale: :en
+    end
   end
 
   test 'a browsing user should not get index of topics in a private forum' do
@@ -55,13 +64,13 @@ class TopicsControllerTest < ActionController::TestCase
     assert_response :success
 
     assert_difference 'User.count', 1, 'A user should be created' do
-      post :create, topic: { user: { name: 'a user', email: 'anon@test.com' }, name: 'some new public topic', body: 'some body text', forum_id: 3}, post: {body: 'this is the body' }, locale: :en
+      post :create, topic: { user: { name: 'a user', email: 'anon@test.com' }, name: 'some new public topic', body: 'some body text', forum_id: 3, posts_attributes: {:"0" => {body: "this is the body"}}}, locale: :en
     end
     assert_difference 'Topic.count', 1, 'A topic should have been created' do
-      post :create, topic: { user: { name: 'a user', email: 'anon@test.com' }, name: 'some new public topic', body: 'some body text', forum_id: 3}, post: {body: 'this is the body' }, locale: :en
+      post :create, topic: { user: { name: 'a user', email: 'anon@test.com' }, name: 'some new public topic', body: 'some body text', forum_id: 3, posts_attributes: {:"0" => {body: "this is the body"}}}, locale: :en
     end
     assert_difference 'Post.count', 1, 'The new topic should have had a post' do
-      post :create, topic: { user: { name: 'a user', email: 'anon@test.com' }, name: 'some new public topic', body: 'some body text', forum_id: 3}, post: {body: 'this is the body' }, locale: :en
+      post :create, topic: { user: { name: 'a user', email: 'anon@test.com' }, name: 'some new public topic', body: 'some body text', forum_id: 3, posts_attributes: {:"0" => {body: "this is the body"}}}, locale: :en
     end
 
     assert_redirected_to topic_posts_path(assigns(:topic)), 'Did not redirect to new public topic'
@@ -70,8 +79,8 @@ class TopicsControllerTest < ActionController::TestCase
   test 'a browsing user should be able to sign up and post a new message at the same time, and receive an email' do
 
     assert_difference 'Topic.count', 1 do
-      assert_difference 'ActionMailer::Base.deliveries.size', 1 do
-        post :create, topic: { user: { name: 'a user', email: 'anon@test.com' }, name: 'some new public topic', body: 'some body text', forum_id: 3}, post: {body: 'this is the body' }, locale: :en
+      assert_difference 'ActionMailer::Base.deliveries.size', 2 do
+        post :create, topic: { user: { name: 'a user', email: 'anon@test.com' }, name: 'some new public topic', body: 'some body text', forum_id: 3, posts_attributes: {:"0" => {body: "this is the body"}}}, locale: :en
       end
     end
 
@@ -85,8 +94,13 @@ class TopicsControllerTest < ActionController::TestCase
   end
 
   test 'Helpy should capture the users locale when they create a new topic' do
-    post :create, topic: { user: { name: 'a user', email: 'anon@test.com' }, name: 'some new public topic', body: 'some body text', forum_id: 3 }, post: { body: 'this is the body' }, locale: :en
+    post :create, topic: { user: { name: 'a user', email: 'anon@test.com' }, name: 'some new public topic', body: 'some body text', forum_id: 3, posts_attributes: {:"0" => {body: "this is the body"}} }, locale: :en
     assert_not_nil Topic.last.locale, 'Did not capture locale when user created new topic'
+  end
+
+  test 'a new topic created though the web form should have channel "web"' do
+    post :create, topic: { user: { name: 'a user', email: 'anon@test.com' }, name: 'some new public topic', body: 'some body text', forum_id: 3, posts_attributes: {:"0" => {body: "this is the body"}} }, locale: :en
+    assert_equal "web", Topic.last.channel
   end
 
   test 'a user should see the option to attach files if cloudinary configured' do
@@ -127,14 +141,49 @@ class TopicsControllerTest < ActionController::TestCase
     assert_response :success
 
     assert_difference 'Topic.count', 1, 'A topic should have been created' do
-      post :create, topic: { name: 'some new private topic', body: 'some body text', forum_id: 1, private: true }, post: { body: 'this is the body' }, locale: :en
+      post :create, topic: { name: 'some new private topic', body: 'some body text', forum_id: 1, private: true, posts_attributes: {:"0" => {body: "this is the body"}} }, locale: :en
     end
     assert_difference 'Post.count', 1, 'A post should have been created' do
-      post :create, topic: { user: { name: 'a user', email: 'anon@test.com' }, name: 'some new public topic', body: 'some body text', forum_id: 1, private: true }, post: { body: 'this is the body' }, locale: :en
+      post :create, topic: { user: { name: 'a user', email: 'anon@test.com' }, name: 'some new public topic', body: 'some body text', forum_id: 1, private: true, posts_attributes: {:"0" => {body: "this is the body"}} }, locale: :en
     end
-    
+
     assert_redirected_to topic_thanks_path, 'Did not redirect to thanks view'
   end
+
+  # A user who is signed in should be able to create a new private or public topic and attach a file
+  test 'a signed in user should be able to create a new private topic and attach a file' do
+    sign_in users(:user)
+
+    get :new, locale: :en
+    assert_response :success
+
+    assert_difference 'Topic.count', 1, 'A topic should have been created' do
+      assert_difference 'Post.count', 1, 'A post should have been created' do
+        post :create,
+          topic: {
+            user: {
+              name: 'a user',
+              email: 'anon@test.com'
+              },
+            name: 'some new public topic',
+            body: 'some body text',
+            forum_id: 1,
+            private: true,
+            posts_attributes: {
+              :"0" => {
+              body: "this is the body",
+              attachments: Array.wrap(uploaded_file_object(Post, :attachments, file))
+              }
+            }
+          },
+          locale: :en
+      end
+    end
+
+    assert_equal "logo.png", Post.last.attachments.first.file.file.split("/").last
+    assert_redirected_to topic_thanks_path, 'Did not redirect to thanks view'
+  end
+
 
   # A user who is registered, but not signed in currently should be able to create a new private
   # or public topic
@@ -145,7 +194,7 @@ class TopicsControllerTest < ActionController::TestCase
 
     assert_difference 'Topic.count', 1, 'A topic should have been created' do
       assert_difference 'Post.count', 1, 'A post should have been created' do
-        post :create, topic: { user: { name: 'Scott Miller', email: 'scott.miller@test.com' }, name: 'some new private topic', body: 'some body text', forum_id: 1, private: true }, post: { body: 'this is the body' }, locale: :en
+        post :create, topic: { user: { name: 'Scott Miller', email: 'scott.miller@test.com' }, name: 'some new private topic', body: 'some body text', forum_id: 1, private: true, posts_attributes: {:"0" => { body: "this is the body" } } }, locale: :en
       end
     end
 
@@ -174,4 +223,129 @@ class TopicsControllerTest < ActionController::TestCase
       xhr :post, :up_vote, { id: 5 , locale: :en }
     end
   end
+
+  test 'a browsing user should be able to create a new public topic without signing in when recaptcha enable' do
+
+    # Make sure recaptcha site_key is set
+    AppSettings['settings.recaptcha_site_key'] = "some-key"
+    AppSettings['settings.recaptcha_api_key'] = "some-key"
+
+    #TopicsController.expects(:verify_recaptcha).returns(true)
+
+    # Get new topics page
+    get :new, locale: :en
+    assert_response :success
+
+    assert_difference 'User.count', 1, 'A user should be created' do
+      post :create, topic: { user: { name: 'a user', email: 'anon@test.com', private: false }, name: 'some new private topic', body: 'some body text', forum_id: 3, posts_attributes: {:"0" => {body: "this is the body"}}}, locale: :en
+    end
+    assert_difference 'Topic.count', 1, 'A topic should have been created' do
+      post :create, topic: { user: { name: 'a user', email: 'anon@test.com', private: false }, name: 'some new private topic', body: 'some body text', forum_id: 3, posts_attributes: {:"0" => {body: "this is the body"}}}, locale: :en
+    end
+    assert_difference 'Post.count', 1, 'The new topic should have had a post' do
+      post :create, topic: { user: { name: 'a user', email: 'anon@test.com', private: false }, name: 'some new private topic', body: 'some body text', forum_id: 3, posts_attributes: {:"0" => {body: "this is the body"}}}, locale: :en
+    end
+
+    assert_redirected_to topic_posts_path(assigns(:topic)), 'Did not redirect to new private topic'
+
+  end
+
+  # test "a signed in user should not be able to create a new private ticket if tickets are not enabled" do
+  #   AppSettings['settings.tickets'] = "0"
+  #
+  #   sign_in users(:user)
+  #
+  #   get :new, locale: :en
+  #   assert_response :success
+  #
+  #   assert_difference 'Topic.count', 0, "A topic should not have been created" do
+  #     post :create, topic: {name: "some new private topic", body: "some body text", forum_id: 1, private: true}, post: {body: 'this is the body'}, locale: :en
+  #   end
+  #   assert_difference 'Post.count', 0, "A post should not have been created" do
+  #     post :create, topic: { user: {name: 'a user', email: 'anon@test.com'}, name: "some new public topic", body: "some body text", forum_id: 1, private: true}, post: {body: 'this is the body'}, locale: :en
+  #   end
+  #
+  #   assert_redirected_to ticket_path(assigns(:topic)), "Did not redirect to private topic view"
+  # end
+
+  test "a signed in user should be able to create a new private ticket if tickets are enabled" do
+    AppSettings['settings.tickets'] = "1"
+
+    sign_in users(:user)
+
+    get :new, locale: :en
+    assert_response :success
+
+    assert_difference 'Topic.count', 1, "A topic should have been created" do
+      assert_difference 'Post.count', 1, "A post should have been created" do
+
+        # TODO: refactor this into a method and DRY up tests
+
+        post :create,
+          topic: {
+            user: {
+              name: 'a user',
+              email: 'anon@test.com'
+            },
+            name: "some new public topic",
+            body: "some body text",
+            forum_id: 1,
+            private: true,
+            posts_attributes: {
+              :"0" => {
+                body: "this is the body"
+              }
+            }
+          },
+          locale: :en
+      end
+    end
+
+    assert_redirected_to topic_thanks_path, "Did not redirect to thanks view"
+  end
+
+  test "a signed in user should be able to create a new public discussion if forums are enabled" do
+    AppSettings['settings.forums'] = "1"
+
+    sign_in users(:user)
+
+    get :new, locale: :en
+    assert_response :success
+
+    assert_difference 'Topic.count', 1, "A topic should have been created" do
+      assert_difference 'Post.count', 1, "A post should have been created" do
+        post :create,
+          topic: {
+            user: {
+              name: 'a user',
+              email: 'anon@test.com'
+            },
+            name: "some new public topic",
+            body: "some body text",
+            forum_id: 4,
+            private: false,
+            posts_attributes: {
+              :"0" => {
+                body: "this is the body"
+              }
+            }
+          },
+          locale: :en
+      end
+    end
+
+
+    assert_redirected_to topic_posts_path(Topic.last), "Did not redirect to forum topic view"
+  end
+
+  test "a signed in user should not be able to create a new private or public topic if tickets and forums are not enabled" do
+    AppSettings['settings.tickets'] = "0"
+    AppSettings['settings.forums'] = "0"
+
+    sign_in users(:user)
+    assert_raises(ActionController::RoutingError) do
+      get :new, locale: :en
+    end
+  end
+
 end

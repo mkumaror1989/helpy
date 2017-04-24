@@ -1,3 +1,5 @@
+# TRANSLATOR(s): Bob Moree
+
 nl:
   language_name: "Nederlands" # The name of the translation file, in that language
   root: &root "Home"
@@ -25,6 +27,8 @@ nl:
   did_this_help: "Was dit antwoord nuttig?"
   yes_button: "Ja"
   no_button: "Nee"
+  # yes_helped: 'Great! Thanks for the feedback!'
+  # no_helped: "We're sorry this didn't help you.  Please contact us for more help!"
 
   # Search
   search_placeholder: "Typ hier een zoekwoord, onderwerp of vraag"
@@ -57,6 +61,7 @@ nl:
   # Knowledgebase
   written_by: "Geschreven door"
   last_edited: "Laatst bewerkt"
+  asked_before: "Is uw vraag al eerder beantwoord? We denken dat deze kunnen gelijkaardig zijn"
 
   # Tickets
   tickets: "Vragen"
@@ -66,15 +71,22 @@ nl:
   created_on: "Aangemaakt op"
 
   # Get Help
-  get_help_header: "Meer hulp nodig??"
+  get_help_header: "Meer hulp nodig?"
   get_help_button: "Stel ons je vraag"
 
   # Profile
   my_profile: 'Mijn Profiel'
 
   # footer
-  powered_by: "Vente Helpdesk - Met dank aan Helpy."
-  get_your_copy: "Bekijk dit project op Github"
+  powered_by: "Met dank aan Helpy."
+  get_your_copy: "Bekijk dit project op GitHub"
+  # version: "Version:"
+
+  # flag
+  #flag_for_review:
+  #flag_post_for_review:
+  #flag_post_placeholder:
+  #flag:
 
   # devise/sessions/new
   login: Inloggen
@@ -120,6 +132,8 @@ nl:
   private: "Privé"
   public: Openbaar
   save_changes: Bijwerken
+  #merge: Merge
+  #merge_confirm: Are you sure you want to merge these tickets?
 
   # Discussion controls
   change_status: Status Wijzigen
@@ -136,21 +150,44 @@ nl:
 
   # Discussion messages
   reopen_message: "Deze vraag is door de helpdesk heropend"
-  close_message: "Deze vraag is door de helpdesk gesloten."
+  closed_message: "Deze vraag is door de helpdesk gesloten."
   trash_message: "Deze vraag is verwijderd."
   assigned_message: "Discussie overgedragen aan %{assigned_to}."
+  # assigned_group: "This ticket has been assigned to %{assigned_group}."
+  # converted_to_ticket: "This discussion was converted to a private ticket."
+  # converted_to_topic: "This ticket was converted to an open discussion and moved to %{forum_name}."
+  # tagged_with: "This ticket was tagged with %{tagged_with}"
+  # notes_hidden: "There are %{hidden_notes} internal notes for this ticket. You can view them by clicking anywhere in this note!"
 
   # User Admin
+  # users: Users
+  # account: Account
   contact_info: Contact
   social_info: Social Media
   edit_user: Gebruiker bewerken
   work_phone: Telefoon (zakelijk)
   cell_phone: Mobiel
 
+  # Priorities
+  # select_priority: Select Priority
+  # vip_priority: VIP
+  # high_priority: High
+  # normal_priority: Normal
+  # low_priority: Low
+
   # User search results
   users_found:
     one: "1 gebruiker gevonden met de naam %{query}"
     other: "%{count} gebruikers gevonden met de naam %{query}"
+
+  # Invite users
+  # invite_users: "Invite New Users"
+  # invite_emails: "Email Addresses"
+  # invite_emails_placeholder: "Type one or more email addresses to send an invitation to"
+  # invite_message: "Message"
+  # invite_message_placeholder: "An optional message that will be sent to the new users"
+  # invite_role: "Role for Invited Users"
+  # send_invite: "Send Invite"
 
   # Discussion View
   asked_a_question: "%{user_name} vroeg..."
@@ -160,6 +197,7 @@ nl:
   select_common: Standaard antwoord selecteren
   reply: Beantwoorden
   internal_note: Interne Notitie
+  # mark_as_resolved: Mark as resolved
   upvote:
     one: "Stem op dit antwoord | %{count}"
     other: "Stem op dit antwoord | %{count}"
@@ -185,12 +223,23 @@ nl:
   published_content: "Gepubliceerd"
   additional_settings: "Aamvullende instellingen"
   content_status: "Content Status"
+  # convert_content: 'Turn post into content'
+  # upload_image: 'Upload Image'
+  # new_discussion: 'Create new discussion from this'
+  # new_discussion_post: 'Discussion #%{topic_id} was created from this one'
+  # new_discussion_topic_title: 'Split from #%{original_id}-%{original_name}'
+  # change_owner_note: 'The creator of this topic was changed from %{old} to %{new}'
 
   # Communities
   new_community: Nieuw forum
   create_new_community: Nieuw forum aanmaken
+  # layout_select: Select Format
+  # layout_table: Table
+  # layout_grid: Grid
+  # layout_qna: Q&A
 
   # Mail messages
+  new_user_subject: "Welcome to %{site_name}"
   hello: "Hallo %{user_name}"
   new_user: "Bedankt voor je bericht! We hebben je vraag ontvangen en onze helpdesk zal hier zo snel mogelijk op antwoorden."
   account_generated: "Er is een helpdesk account voor je aangemaakt. Gebruik de volgende link om in te loggen:"
@@ -198,6 +247,43 @@ nl:
   message_id: "Vraag ID"
   message_response: "Het volgende bericht is geplaatst als antwoord op je vraag:"
   view_online: "Bekijk dit bericht online:"
+
+  # settings
+  # settings: "Settings"
+  # general: "General"
+  # design: "Design"
+  # international: "International"
+  # widget: "Embeddable Widget"
+  # common_replies: "Common Replies"
+  # integrations: "Integrations"
+
+  # Keyboard Shortcuts
+  # shortcut_then: "then"
+  # listing_views: "Listing views"
+  # keyboard_shortcuts: "Keyboard Shortcuts"
+  # show_new_tickets: "Show new tickets"
+  # show_all_tickets: "Show all tickets"
+  # show_open_tickets: "Show open tickets"
+  # show_tickets_assigned_to_you: "Show tickets assigned to you"
+  # show_pending_tickets_assigned_to_you: "Show pending tickets assigned to you"
+  # show_closed_tickets: "Show closed tickets"
+  # search_for_tickets: "Search for tickets"
+  # viewing_tickets: "View tickets"
+  # select_previous_ticket: "Select previous ticket"
+  # select_next_ticket: "Select next ticket"
+  # view_selected_ticket: "View selected ticket"
+  # jump_to_a_specific_ticket_number: "Jump to a specific ticket number"
+  # ticket_actions: "Ticket actions"
+  # assign_the_ticket: "Assign ticket"
+  # move_the_ticket: "Move ticket"
+  # expand_the_ticket_thread: "Expand ticket thread"
+  # reply_to_the_ticket: "Reply to the ticket"
+  # add_an_internal_note: "Add an internal note"
+  # change_ticket_status: "Change ticket status"
+  # associate_with_a_group: "Associate with a group"
+  # ticket_status: "Ticket status"
+  # mark_resolved: "Mark as resolved"
+  # reopen_ticket: "Reopen ticket"
 
   activerecord:
     attributes:
@@ -210,6 +296,7 @@ nl:
         cell_phone: Mobiel
         city: stad
         state: Staat
+        # signature: Signature
       topic:
         name: Onderwerp
       post:
@@ -234,6 +321,9 @@ nl:
         name: Naam
         description: Beschrijving
         private: "Privé"
+        # layout: Layout
+        # allow_topic_voting: Allow topic voting?
+        # allow_post_voting: Allow post voting?
 
     helpers:
       submit:
@@ -250,6 +340,8 @@ nl:
     docs:
       root: *root
     forums:
+      root: *root
+    locales:
       root: *root
     topics:
       root: *root
@@ -271,3 +363,15 @@ nl:
       save: "%{model} opslaan"
       new: "%{model} aanmaken"
       delete: "%{model} verwijderen"
+
+  number:
+    human:
+      decimal_units:
+        format: "%n%u"
+        units:
+          unit: ""
+          thousand: k
+          million: M
+          billion: B
+          trillion: T
+          quadrillion: Q

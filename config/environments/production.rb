@@ -66,14 +66,13 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: Settings.site_url }
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.perform_deliveries = Settings.send_email
-  config.action_mailer.raise_delivery_errors = false
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).
   # This can be managed through the settings panel inside Helpy.  It is probably best you leave
   # all locales enabled.  If you write a new locale, you need to add it here!
 
-  config.i18n.available_locales = [:en, :es, :de, :fr, :et, :ca, :ru, :ja, 'zh-cn', 'zh-tw', 'pt', :nl, 'tr', 'pt-br']
+  config.i18n.available_locales = [:en, :es, :de, :fr, :it, :et, :ca, :sv, :ru, :ja, :hi, 'zh-cn', 'zh-tw', 'pt', :nl, 'tr', 'pt-br', :fa]
   config.i18n.default_locale = :en
   config.i18n.fallbacks = true
 
@@ -85,4 +84,5 @@ Rails.application.configure do
 
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
+
 end

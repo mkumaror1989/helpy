@@ -1,6 +1,6 @@
 <div id="user-info">
 </div>
-<% if @topics.count > 0 %>
+<% if @topics.present? %>
 <table id="topics" class="forum table-hover">
 
   <col width="80px" class="checkbox-col">
@@ -14,6 +14,15 @@
   </tr>
   <tbody>
   <%= render partial: 'admin/topics/topic', collection: @topics.includes(:assigned_user) %>
+
+  <script>
+    <% @topics.each_with_index do |topic,i| %>
+    Mousetrap.bind('g <%= topic.id.to_s.split('').join(" ") %>', function() {
+      $('.topic-link-<%= topic.id %>').click();
+    });
+    <% end %>
+  </script>
+
   </tbody>
   <tbody id="multiple-edit" style="display:none;">
     <tr>
@@ -44,7 +53,31 @@
               <% end %>
             </ul>
           </span>
+
+          <% if teams? and @all_teams.count > 0 %>
+          <span class="btn btn-group left-col-dropdown">
+            <span class="dropdown-toggle ticket-control tiny-header" data-toggle="dropdown" aria-expanded="false">
+              <%= t(:no_team_assigned, default: 'Assign to group') %> <span class='caret'></span>
+            </span>
+            <ul class="dropdown-menu ticket-controls" role="menu">
+              <% @all_teams.to_a.each do |team| %>
+              <li class='team-item'>
+                <%= link_to("#{content_tag(:div, '', style: badge_color_from_tag(team), class: 'color-sample label-' + team.first.downcase)} #{content_tag :div, team.try(:titleize)}".html_safe, admin_assign_team_path(team: team), :remote => true, class: 'multiple-update') %>
+              </li>
+              <% end %>
+              <!-- <li class="new-tag">
+                <%= form_tag '#', class: 'new-group-form', remote: true do %>
+                <%= text_field_tag "new_group", '', placeholder: "Add a new group", class: 'form-control multiple' %><%#= link_to "Add", '#', class: 'btn btn-default pull-right add-new-group' %>
+                <% end %>
+              </li> -->
+              <li><%= link_to "Unassign from group", admin_assign_team_path(team: ''), remote: true, class: 'multiple-update' %></li>
+
+            </ul>
+          </span>
+          <% end %>
+
         </span>
+        <span class="merge-span" style="display: none;"><%= link_to t(:merge, default: "Merge"), admin_merge_tickets_path(merge: ''), remote: true, class: 'multiple-update ticket-control tiny-header', method: :post, data: { confirm: t(:merge_confirm, default: "Are you sure you want to merge these tickets?") } %></span>
       </td>
     </tr>
   </tbody>
@@ -59,4 +92,12 @@
 <div class="text-center">
   <%= paginate @topics, remote: true %>
 </div>
+<% else %>
+
+<div id="topics" class="row">
+  <div class="col-md-12 text-center no-tickets">
+    <span><i class="fa fa-inbox"></i><br/><%= t('nothing_here')  %></span>
+  </div>
+</div>
+
 <% end %>

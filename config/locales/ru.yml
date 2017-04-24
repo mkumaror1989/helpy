@@ -1,3 +1,5 @@
+# TRANSLATOR(s): Anna Prosvirova, Dmitry Zuev, Oleg Bovykin
+
 ru:
   language_name: 'Русский' # The name of the translation file, in that language
   root: &root 'Главная'
@@ -25,6 +27,8 @@ ru:
   did_this_help: "Ваша проблема решена?"
   yes_button: 'Да'
   no_button: 'Нет'
+  # yes_helped: 'Great! Thanks for the feedback!'
+  # no_helped: "We're sorry this didn't help you.  Please contact us for more help!"
 
   # Search
   search_placeholder: "Введите ключевое слово, тему или вопрос"
@@ -60,6 +64,7 @@ ru:
   # Knowledgebase
   written_by: "Автор"
   last_edited: "Последняя редакция"
+  asked_before: "Был ваш вопрос был дан ответ раньше? Мы считаем, что они могут быть похожи"
 
   # Tickets
   tickets: "Тикеты"
@@ -77,7 +82,14 @@ ru:
 
   # footer
   powered_by: "Создано с помощью Helpy. Сервис поддержки с открытым исходным кодом."
-  get_your_copy: "Получите свою копию на Github"
+  get_your_copy: "Получите свою копию на GitHub"
+  # version: "Version:"
+
+  # flag
+  #flag_for_review:
+  #flag_post_for_review:
+  #flag_post_placeholder:
+  #flag:
 
   # devise/sessions/new
   login: "Войти"
@@ -101,7 +113,7 @@ ru:
 
   # Admin menu
   discussions: Обсуждения
-  content: Content
+  content: Категории
   communities: Сообщества
   app_store: Приложения
   search: Поиск
@@ -123,6 +135,8 @@ ru:
   private: приватный
   public: публичный
   save_changes: Сохранить изменения
+  #merge: Merge
+  #merge_confirm: Are you sure you want to merge these tickets?
 
   # Discussion controls
   change_status: Изменить статус
@@ -140,16 +154,30 @@ ru:
 
   # Discussion messages
   reopen_message: "Это сообщение было снова открыто поддержкой."
-  close_message: "Этот тикет был закрыт поддержкой."
+  closed_message: "Этот тикет был закрыт поддержкой."
   trash_message: "Этот тикет был удалён."
   assigned_message: "Обсуждение было перенесено в %{assigned_to}."
+  # assigned_group: "This ticket has been assigned to %{assigned_group}."
+  # converted_to_ticket: "This discussion was converted to a private ticket."
+  # converted_to_topic: "This ticket was converted to an open discussion and moved to %{forum_name}."
+  # tagged_with: "This ticket was tagged with %{tagged_with}"
+  # notes_hidden: "There are %{hidden_notes} internal notes for this ticket. You can view them by clicking anywhere in this note!"
 
   # User Admin
+  # users: Users
+  # account: Account
   contact_info: Контакт
   social_info: Социальные сети
   edit_user: Редактировать пользователя
   work_phone: номер рабочего телефона
   cell_phone: номер мобильного телефона
+
+  # Priorities
+  # select_priority: Select Priority
+  # vip_priority: VIP
+  # high_priority: High
+  # normal_priority: Normal
+  # low_priority: Low
 
   # User search results
   users_found:
@@ -157,6 +185,15 @@ ru:
     one: "1 пользователь найден по запросу %{query}"
     few: "%{count} пользователя найдено по запросу %{query}"
     many: "%{count} пользователей найдено по запросу %{query}"
+
+  # Invite users
+  # invite_users: "Invite New Users"
+  # invite_emails: "Email Addresses"
+  # invite_emails_placeholder: "Type one or more email addresses to send an invitation to"
+  # invite_message: "Message"
+  # invite_message_placeholder: "An optional message that will be sent to the new users"
+  # invite_role: "Role for Invited Users"
+  # send_invite: "Send Invite"
 
   # Discussion View
   asked_a_question: "%{user_name} задал вопрос..."
@@ -166,6 +203,7 @@ ru:
   select_common: Выберите Общий Ответ
   reply: Ответьте
   internal_note: Внутренняя заметка
+  # mark_as_resolved: Mark as resolved
   upvote:
     zero: "Голосовать | %{count}"
     one: "Голосовать | %{count}"
@@ -193,12 +231,23 @@ ru:
   published_content: "Опубликовано"
   additional_settings: "Дополнительные настройки"
   content_status: "Статус контента"
+  # convert_content: 'Turn post into content'
+  # upload_image: 'Upload Image'
+  # new_discussion: 'Create new discussion from this'
+  # new_discussion_post: 'Discussion #%{topic_id} was created from this one'
+  # new_discussion_topic_title: 'Split from #%{original_id}-%{original_name}'
+  # change_owner_note: 'The creator of this topic was changed from %{old} to %{new}'
 
   # Communities
   new_community: Создать сообщество
   create_new_community: Создать сообщество
+  # layout_select: Select Format
+  # layout_table: Table
+  # layout_grid: Grid
+  # layout_qna: Q&A
 
   # Mail messages
+  new_user_subject: "Welcome to %{site_name}"
   hello: "Привет %{user_name}"
   new_user: "Благодарим Вас за обращение к нам. Ваше сообщение было получено нашей службой поддержки, и мы ответим Вам ближайшее время."
   account_generated: "Учетная запись была создана для вас. Чтобы войти в систему, пожалуйста, используйте эту ссылку:"
@@ -206,6 +255,43 @@ ru:
   message_id: "№ тикета"
   message_response: "Следующее сообщение было размещено в ответ на ваш вопрос:"
   view_online: "Посмотреть это онлайн:"
+
+  # settings
+  # settings: "Settings"
+  # general: "General"
+  # design: "Design"
+  # international: "International"
+  # widget: "Embeddable Widget"
+  # common_replies: "Common Replies"
+  # integrations: "Integrations"
+
+  # Keyboard Shortcuts
+  # shortcut_then: "then"
+  # listing_views: "Listing views"
+  # keyboard_shortcuts: "Keyboard Shortcuts"
+  # show_new_tickets: "Show new tickets"
+  # show_all_tickets: "Show all tickets"
+  # show_open_tickets: "Show open tickets"
+  # show_tickets_assigned_to_you: "Show tickets assigned to you"
+  # show_pending_tickets_assigned_to_you: "Show pending tickets assigned to you"
+  # show_closed_tickets: "Show closed tickets"
+  # search_for_tickets: "Search for tickets"
+  # viewing_tickets: "View tickets"
+  # select_previous_ticket: "Select previous ticket"
+  # select_next_ticket: "Select next ticket"
+  # view_selected_ticket: "View selected ticket"
+  # jump_to_a_specific_ticket_number: "Jump to a specific ticket number"
+  # ticket_actions: "Ticket actions"
+  # assign_the_ticket: "Assign ticket"
+  # move_the_ticket: "Move ticket"
+  # expand_the_ticket_thread: "Expand ticket thread"
+  # reply_to_the_ticket: "Reply to the ticket"
+  # add_an_internal_note: "Add an internal note"
+  # change_ticket_status: "Change ticket status"
+  # associate_with_a_group: "Associate with a group"
+  # ticket_status: "Ticket status"
+  # mark_resolved: "Mark as resolved"
+  # reopen_ticket: "Reopen ticket"
 
   activerecord:
     attributes:
@@ -218,17 +304,18 @@ ru:
         cell_phone: номер мобильного телефона
         city: Город
         state: Область
+        # signature: Signature
       topic:
         name: Тема
       post:
         kind: Жанр
       category:
         name: Имя
-        icon: Нконка
+        icon: Иконка
         keywords: Ключевые слова
         title_tag: Название тегов
         meta_description: Мета Описание
-        front_page: главная страница
+        front_page: Главная страница
         active: Активный
       doc:
         title: Название
@@ -242,6 +329,9 @@ ru:
         name: Имя
         description: Описание
         private: Приватный
+        # layout: Layout
+        # allow_topic_voting: Allow topic voting?
+        # allow_post_voting: Allow post voting?
 
     # helpers:
       submit:
@@ -258,6 +348,8 @@ ru:
     docs:
       root: *root
     forums:
+      root: *root
+    locales:
       root: *root
     topics:
       root: *root
@@ -279,3 +371,15 @@ ru:
       save: "Сохранить %{model}"
       new: "Новый %{model}"
       delete: "Удалить %{model}"
+
+  number:
+    human:
+      decimal_units:
+        format: "%n%u"
+        units:
+          unit: ""
+          thousand: тыс.
+          million: млн.
+          billion: B
+          trillion: T
+          quadrillion: Q

@@ -21,6 +21,7 @@
 #  updated_at       :datetime         not null
 #  topics_count     :integer          default(0)
 #  allow_comments   :boolean          default(TRUE)
+#  attachments      :string           default([]), is an Array
 #
 
 class Doc < ActiveRecord::Base
@@ -38,7 +39,8 @@ class Doc < ActiveRecord::Base
   validates :category_id, presence: true
 
   include PgSearch
-  multisearchable :against => [:title, :body, :keywords], :if => :active
+  multisearchable :against => [:title, :body, :keywords],
+    :if => lambda { |record| record.category.publicly_viewable? && record.active }
 
   has_paper_trail
 
@@ -52,11 +54,12 @@ class Doc < ActiveRecord::Base
   ranks :rank
 
   acts_as_taggable
+  acts_as_taggable_on :tags
 
   scope :alpha, -> { order('title ASC') }
   scope :by_category, -> { order(:category_id) }
   scope :in_category, -> (cat) { where(category_id: cat).order('front_page DESC, rank ASC') }
-  scope :ordered, -> { order('rank ASC') }
+  scope :ordered, -> { rank(:rank) }
   scope :active, -> { where(active: true) }
   scope :recent, -> { order('last_updated DESC').limit(5) }
   scope :all_public_popular, -> { where(active: true).order('points DESC').limit(6) }

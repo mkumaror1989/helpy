@@ -21,7 +21,16 @@
 #  updated_at       :datetime         not null
 #  topics_count     :integer          default(0)
 #  allow_comments   :boolean          default(TRUE)
+#  attachments      :string           default([]), is an Array
 #
 
 module DocsHelper
+
+  def sanitize_doc_content(content)
+    "#{content}".html_safe
+  end
+
+  def renderize_doc_title(title_tag, original_title)
+    title_tag.blank? ? original_title : title_tag
+  end
 end

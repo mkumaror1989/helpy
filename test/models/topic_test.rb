@@ -20,8 +20,10 @@
 #  post_cache       :text
 #  created_at       :datetime         not null
 #  updated_at       :datetime         not null
-#  doc_id           :integer          default(0)
 #  locale           :string
+#  doc_id           :integer          default(0)
+#  channel          :string           default("email")
+#  kind             :string           default("ticket")
 #
 
 require 'test_helper'
@@ -60,6 +62,13 @@ class TopicTest < ActiveSupport::TestCase
 
   end
 
+  test "updating the topic should update the owner name cache" do
+    new_user = User.find(7)
+    Topic.find(2).update(user: new_user)
+
+    assert_equal Topic.find(2).user_name, new_user.name
+  end
+
   test "trashed messages should be in forum 2, and unassigned" do
 
     Topic.all.each do |topic|
@@ -75,17 +84,16 @@ class TopicTest < ActiveSupport::TestCase
     end
   end
 
-  test "closed messages should be unassigned" do
+  test "closing a discussion should not unassign it" do
 
-    Topic.all.each do |topic|
+    topic = Topic.find(1)
 
-      topic.close
+    topic.close
 
-      assert topic.assigned_user_id.nil?
-      assert topic.current_status == 'closed'
-      assert_not_nil topic.closed_date
+    assert_not_nil topic.assigned_user_id
+    assert topic.current_status == 'closed'
+    assert_not_nil topic.closed_date
 
-    end
   end
 
   test "creating new lowercase name should be saved in sentence_case" do
@@ -115,7 +123,7 @@ class TopicTest < ActiveSupport::TestCase
     topic = Topic.create!(name: name, user_id: 1, forum_id: 1)
     topic.close
     assert_equal 'closed', topic.current_status
-    assert_equal nil, topic.assigned_user_id
+    assert_nil topic.assigned_user_id
   end
 
   test "#trash should set the current_status of the topic to trash, assigned_user_id to nil, and should create a closed_message post belonging to that topic" do
@@ -123,16 +131,66 @@ class TopicTest < ActiveSupport::TestCase
     t_posts_count = topic.posts.count
     topic.trash
     assert_equal 'trash', topic.current_status
-    assert_equal nil, topic.assigned_user_id
+    assert_nil topic.assigned_user_id
     assert_equal t_posts_count + 1, topic.posts.count
   end
 
-  test "#assign should set the current_status of the topic to pending, assigned_user_id to specified user_id, and should create a closed_message post belonging to that topic" do
+  test "#assign_agent should set the current_status of the topic to pending, assigned_user_id to specified user_id, and should create a closed_message post belonging to that topic" do
     topic = Topic.create!(name: name, user_id: 1, forum_id: 1)
+    bulk_post_attributes = []
     t_posts_count = topic.posts.count
-    topic.assign(2, 1)
+    bulk_post_attributes << {body: I18n.t(:assigned_message, assigned_to: User.find(1).name), kind: 'note', user_id: 1, topic_id: topic.id}
+    topics = Topic.where(id: topic.id)
+    topics.bulk_agent_assign(bulk_post_attributes, 1)
+
+    topic = Topic.find(topic.id)
     assert_equal 'pending', topic.current_status
     assert_equal 1, topic.assigned_user_id
     assert_equal t_posts_count + 1, topic.posts.count
   end
+
+  test "#assign_group should create an internal note belonging to that topic" do
+    topic = Topic.create!(name: name, user_id: 1, forum_id: 1)
+    bulk_post_attributes = []
+    t_posts_count = topic.posts.count
+    bulk_post_attributes << {body: I18n.t(:assigned_group, assigned_group: 'test'), kind: 'note', user_id: 1, topic_id: topic.id}
+    topics = Topic.where(id: topic.id)
+    topics.bulk_group_assign(bulk_post_attributes, 'test')
+
+    topic = Topic.find(topic.id)
+    assert_equal t_posts_count + 1, topic.posts.count
+  end
+
+  test "public? should return true for a public topic, false if private" do
+    assert_equal Topic.find(1).public?, false
+    assert_equal Topic.find(4).public?, true
+  end
+
+  test "Should be able to assign a topic to a group" do
+    topic = Topic.create!(name: name, user_id: 1, forum_id: 1, team_list: 'something')
+    assert_equal 'something', topic.team_list.first
+  end
+
+  test "Should create a comment thread" do
+    assert_difference 'Topic.count', +1 do
+      Topic.create_comment_thread(1, 1)
+    end
+  end
+
+  test "Should be able to merge two topics and copy posts" do
+    topica = Topic.create(name: "message A", user_id: 1, forum_id: 1, private: true)
+    topica.posts.create(kind: 'first', body: 'message A first', user_id: 1)
+    topica.posts.create(kind: 'reply', body: 'message A reply', user_id: 1)
+    topicb = Topic.create(name: "message B", user_id: 1, forum_id: 1, private: true)
+    topicb.posts.create(kind: 'first', body: 'message B first', user_id: 1)
+    topicb.posts.create(kind: 'reply', body: 'message B reply', user_id: 1)
+
+    newtopic = Topic.merge_topics([topica.id, topicb.id])
+    assert_equal(4, newtopic.posts.count, "Should be 4 posts")
+    assert_equal("MERGED: Message A", newtopic.name, "New topic title is wrong")
+    assert_equal("ticket", newtopic.kind, "New topic kind should be 'ticket'")
+    assert_equal(1, newtopic.posts.where(kind: 'first').all.count, "There should only be one first post")
+    assert_equal('note', newtopic.posts.last.kind, "The last post should be a note")
+  end
+
 end

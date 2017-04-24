@@ -1,9 +1,34 @@
+/*jshint multistr: true */
+
 var Helpy = Helpy || {};
 
 Helpy.ready = function(){
+
+  $('.selectpicker').selectpicker({});
+
+  $(".best_in_place").best_in_place();
+
   $('.profile').initial();
 
   $('.attachinary-input').attachinary();
+
+  $('.uploader').fileupload({
+    dataType: 'script',
+    singleFileUploads: false
+  });
+
+  $('.submit-loader').off('submit', Helpy.loader).on('submit', Helpy.loader);
+
+  $('.new-ticket-loader').off('submit', Helpy.loader).on('submit', function(){
+    var $form = $('form.new-ticket-loader');
+    $(document.body).append($form);
+    $form.addClass('hidden');
+    Helpy.loader();
+  });
+
+  $('.click-loader').off('click').on('click', Helpy.loader);
+  $('ul.pagination li a').off('click').on('click', Helpy.loader);
+
   $('.screenshot-link').magnificPopup({type:'image', gallery:{enabled:true}});
 
   // make sure dropdowns close after click of link
@@ -29,6 +54,69 @@ Helpy.ready = function(){
     $(this).closest('.has-arrow').addClass('over');
   });
 
+  $.ui.autocomplete.prototype._renderItem = function( ul, item) {
+    return $( "<li></li>" )
+        .data( "item.autocomplete", item.name )
+        .append( "<div class='ui-menu-item-heading'><a href=" + item.link + " >" + item.name + "</a></div>" )
+        .append( "<div class='ui-menu-item-content' >" + item.content + "</div>" )
+        .appendTo( ul );
+  };
+
+
+  $(".autosearch").keyup(function () {
+      var that = $(this);
+      value = $(this).val();
+      $(this).autocomplete({
+        source: function (request, response) {
+          jQuery.get("/"+location.href.split("/")[3]+"/search.json", {
+              query: value
+          }, function (data) {
+            response(data);
+          });
+        },
+        minLength: 3,
+        appendTo: that.next(),
+        focus: function( event, ui ) {
+          $(".autosearch").val(ui.item.name);
+        },
+        select: function( event, ui ) {
+          window.location.href = ui.item.link;
+        },
+        messages: {
+          noResults: '',
+          results: function() {}
+        }
+
+      });
+
+  });
+
+  $(".suggest-results").blur(function () {
+      var that = $(this);
+      var $results = $('.suggestion-results');
+      var $container = $('.suggestion-results-container');
+      $query = $(this).val();
+
+      if ($query.length >= 3) {
+        $.getJSON( "/"+location.href.split("/")[3]+"/search.json?depth=5&query=" + $query, function( data ) {
+          var items = [];
+          $.each( data, function( key, val ) {
+            items.push( "<li id='" + key + "'><a href='" + val.link + "' target='blank'>" + val.name + "</a></li>" );
+          });
+
+          var $html = $( "<ul/>", {
+          "class": "suggested-results list-unstyled",
+          html: items.join( "" )}
+          );
+
+          if (items.length > 0) {
+            $results.html($html);
+            $container.removeClass("hidden");
+            $container.fadeIn();
+          }
+        });
+      }
+  });
 
   $('.stats').on('click', function(){
 
@@ -44,6 +132,7 @@ Helpy.ready = function(){
     $(this).closest('.has-arrow').addClass('over');
 
     var form = $("<form></form>");
+    var url = $(this).find('a').attr('href');
     form.attr(
     {
         id     : "formform",
@@ -56,6 +145,16 @@ Helpy.ready = function(){
     $("body").append(form);
     $("#formform").submit();
     $("#formform").remove();
+
+    // Show loader
+    Helpy.loader();
+
+    // Ensure history is captured in the browser
+    history.pushState(null, '', url);
+    $(window).off().on("popstate", function(){
+      console.log("Popstate fired: " + location.href);
+      $.getScript(location.href);
+    });
 
     // Prevent the link from opening normally
     return false;
@@ -83,18 +182,30 @@ Helpy.ready = function(){
   // used by create topic form
   $('#topic_private_true').click(function(){
     $("#topic_forum_id").parent().hide();
-    $('#new_topic').append("<input type='hidden' id='new_topic_forum_id' name='topic[forum_id]' value='1'/>")
+    $('#new_topic').append("<input type='hidden' id='new_topic_forum_id' name='topic[forum_id]' value='1'/>");
+    Helpy.showGroup();
   });
   $('#topic_private_false').click(function(){
     $("#topic_forum_id").parent().show();
     $("#new_topic_forum_id").remove();
+    Helpy.showGroup();
   });
 
+  // Generate temp email address on demand, in case the user does not have an email
+  $('.generate-temp').off().on('click', function(){
+    if ($('#topic_user_email').val() === '') {
+      $('#topic_user_email').val("change@me-" + $("#topic_user_home_phone").val() + '-' + $("#topic_user_name").val().replace(" ","-") + '.com');
+      return false;
+    }
+  });
+
+
   // Hide/replace last child of breadcrumbs since I don't have time to hack gem right now
-  $("ul.breadcrumb li:last-child").html("")
+  $("ul.breadcrumb li:last-child").html("");
 
   // compress thread if there are more than 4 messages
-  var $thread = $('.post-container.kind-reply.disallow-post-voting, .post-container.kind-note.disallow-post-voting')
+  // var $thread = $('.post-container.kind-reply.disallow-post-voting, .post-container.kind-note.disallow-post-voting');
+  var $thread = $('.post-container.kind-reply.disallow-post-voting');
   if ($thread.size() >= 2) {
 
     // insert expand thread message
@@ -116,9 +227,21 @@ Helpy.ready = function(){
     $thread.hide().last().show();
   }
 
-  // Use common reply
+
+
+
+  // Use or append common reply
   $('#post_reply_id').on('change', function(){
-    $('#post_body').val($('#post_reply_id option:selected').val());
+    var post_body = $('#post_body');
+    var common_reply = $('#post_reply_id option:selected');
+
+    // append new line if some text already exists
+    if( post_body.val() && common_reply.val() ) {
+      post_body.val(post_body.val() + "\n\n");
+    }
+
+    // add content of selected reply
+    post_body.val( post_body.val() + common_reply.val() );
     $('.disableable').attr('disabled', false);
   });
 
@@ -130,19 +253,26 @@ Helpy.ready = function(){
     var output;
     var messages = $('.topic-checkbox:checked').size();
 
+    $('.merge-span').hide();
+    console.log("Update");
+
     switch(messages) {
       case 1:
         output = Helpy.selected[1];
+        $('.merge-span').hide();
         break;
       case 2:
         output = Helpy.selected[2];
+        $('.merge-span').show();
         break;
       default:
         output = Helpy.selected[3].replace("9", messages);
+        $('.merge-span').show();
         break;
     }
+
     $('.selected-message').text(output);
-  };
+  }
 
   $('#check-all').off().on('change', function(){
     if (this.checked) {
@@ -180,7 +310,7 @@ Helpy.ready = function(){
     });
     // modify link to include array
     $.each(topic_ids, function(i){
-      str = str + "&topic_ids[]=" + topic_ids[i]
+      str = str + "&topic_ids[]=" + topic_ids[i];
     });
     $(this).attr('href', str);
     // return true to follow the link
@@ -212,11 +342,12 @@ Helpy.ready = function(){
     $('.forgot-form').hide();
     $('.modal-title').text($('.login-form').data("title"));
     $('.modal-links').show();
-  })
+  });
 
   $('.forgot-link').off().on('click', function() {
     $('.login-form').hide();
     $('.forgot-form').show();
+    $(ClientSideValidations.selectors.forms).validate();
     $('.modal-title').text($('.forgot-form').data("title"));
     $('.modal-links').hide();
   });
@@ -232,6 +363,10 @@ Helpy.ready = function(){
     });
   });
 
+  $('.keyboard-shortcuts-link').off().on('click', function(){
+    Helpy.showShortcuts();
+  });
+
   // Autolink messages
   $('.post-body').each(function(){
     var that = $(this);
@@ -240,10 +375,38 @@ Helpy.ready = function(){
     that.html(text.autoLink({ target: "_blank" }));
   });
 
+  // Post CC and BCC
+  $('.cc-bcc-toggle').off().on('click', function() {
+    $fieldContainer = $('.cc-bcc');
+
+    if ($fieldContainer.hasClass('hidden')){
+      $fieldContainer.removeClass('hidden');
+      var previousCC = $('.post-cc').last().text().split(": ")[1];
+      var previousBCC = $('.post-bcc').last().text().split(": ")[1];
+      $('#post_cc').val(previousCC);
+      $('#post_bcc').val(previousBCC);
+      $('.cc-bcc-toggle').addClass('fa-angle-up').removeClass('fa-angle-down');
+    } else {
+      $fieldContainer.addClass('hidden');
+      $('#post_cc').val("");
+      $('#post_bcc').val("");
+      $('.cc-bcc-toggle').removeClass('fa-angle-up').addClass('fa-angle-down');
+    }
+  });
+
   // Hide required field indicator generated by simple_form, as we already
   // Add this in css.  There is probably a better way to do this?
   $("abbr[title='required']").hide();
 
+  // Add hoversort icon
+  $('.hoversort').off().on('mouseover', function(){
+    $(this).prepend('<span class="fa fa-arrows-v" style="color:#666; margin-right: 0;"></span>');
+    $(this).css("cursor","move");
+
+    $(this).on('mouseout', function(){
+      $(this).find('span.fa-arrows-v').remove();
+    });
+  });
 };
 
 $.attachinary.config.template = '\
@@ -275,19 +438,34 @@ Helpy.didthisHelp = function(yesno){
     contactus = "<div class='col-md-3 align-right'><h3>" + Helpy.contactUs + "</h3></div>";
   } else {
     message = "<h3>" + Helpy.yesHelped + "</h3>";
+    contactus = '';
   }
 
   message = "<div class='col-md-9'>" + message + "</div>" + contactus;
 
   $('#did-this-help').html(message);
   return true;
-}
+};
+
+Helpy.showGroup = function() {
+  if ($('#topic_private_true').is(':checked')) {
+    $('#topic_team_list').parent().removeClass('hidden');
+  } else if ($('#topic_private_false').is(':checked')) {
+    $('#topic_team_list').parent().addClass('hidden');
+  } else {
+    $('#topic_team_list').parent().removeClass('hidden');
+  }
+};
+
+Helpy.loader = function(){
+  $('#tickets').html("<div class=\"col-md-12 text-center no-tickets\"><i class=\"fa fa-spinner fa-pulse fa-3x fa-fw\"></i><span class=\"sr-only\"></span></div>");
+};
 
 $(document).ready(Helpy.ready);
 $(document).on('page:load', Helpy.ready);
 
 $(document).on('page:change', function () {
-  
+
   //Truncate Q&A responses
   $('.shorten').jTruncate({
     length: 200,
@@ -302,7 +480,7 @@ $(document).on('page:change', function () {
   // Allows image insertion into quill editor
   $('.doc-form-files .cloudinary-fileupload').bind('cloudinarydone', function(e, data) {
     var element = document.querySelector("trix-editor");
-    var thisImage = "<img src='" + $.cloudinary.image(data.result.public_id).attr('src') + "'>"
+    var thisImage = "<img src='" + $.cloudinary.image(data.result.public_id).attr('src') + "'>";
     element.editor.insertHTML(thisImage);
 
     $('.image_public_id').val(data.result.public_id);
@@ -310,6 +488,3 @@ $(document).on('page:change', function () {
   });
 
 });
-
-
-

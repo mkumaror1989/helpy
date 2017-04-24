@@ -2,14 +2,16 @@ class ApplicationController < ActionController::Base
   # Prevent CSRF attacks by raising an exception.
   # For APIs, you may want to use :null_session instead.
   protect_from_forgery with: :exception
-  add_breadcrumb :root
+  helper_method :recaptcha_enabled?
 
+  before_action :add_root_breadcrumb
   before_action :set_locale
   before_action :set_vars
-  before_action :instantiate_tracker
+  before_action :configure_permitted_parameters, if: :devise_controller?
+  around_action :set_time_zone, if: :current_user
 
   def url_options
-    { locale: I18n.locale }.merge(super)
+    { locale: I18n.locale, theme: params[:theme] }.merge(super)
   end
 
   def after_sign_in_path_for(_resource)
@@ -19,22 +21,98 @@ class ApplicationController < ActionController::Base
     oauth_url || redirect_url
   end
 
-  # These 3 methods provide feature authorization for admins. Editor is the most restricted,
-  # agent is next and admin has access to everything:
-
-  def verify_editor
-    (current_user.nil?) ? redirect_to(root_path) : (redirect_to(root_path) unless current_user.is_editor?)
+  def recaptcha_enabled?
+    AppSettings['settings.recaptcha_site_key'].present? && AppSettings['settings.recaptcha_api_key'].present?
   end
 
-  def verify_agent
-    (current_user.nil?) ? redirect_to(root_path) : (redirect_to(root_path) unless current_user.is_agent?)
+  def cloudinary_enabled?
+    AppSettings['cloudinary.cloud_name'].present? && AppSettings['cloudinary.api_key'].present? && AppSettings['cloudinary.api_secret'].present?
+  end
+  helper_method :cloudinary_enabled?
+
+  def tracker(ga_category, ga_action, ga_label, ga_value=nil)
+    if AppSettings['settings.google_analytics_id'].present? && cookies['_ga'].present?
+      ga_cookie = cookies['_ga'].split('.')
+      ga_client_id = ga_cookie[2] + '.' + ga_cookie[3]
+      logger.info("Enqueing job for #{ga_client_id}")
+
+      TrackerJob.perform_later(
+        ga_category,
+        ga_action,
+        ga_label,
+        ga_value,
+        ga_client_id,
+        AppSettings['settings.google_analytics_id']
+      )
+    end
   end
 
-  def verify_admin
-    (current_user.nil?) ? redirect_to(root_path) : (redirect_to(root_path) unless current_user.is_admin?)
+  def rtl_locale?(locale)
+    return true if %w(ar dv he iw fa nqo ps sd ug ur yi).include?(locale)
+    return false
+  end
+  helper_method :rtl_locale?
+
+  def welcome_email?
+    AppSettings['settings.welcome_email'] == "1" || AppSettings['settings.welcome_email'] == true
+  end
+  helper_method :welcome_email?
+
+  def forums?
+    AppSettings['settings.forums'] == "1" || AppSettings['settings.forums'] == true
+  end
+  helper_method :forums?
+
+  def knowledgebase?
+    AppSettings['settings.knowledgebase'] == "1" || AppSettings['settings.knowledgebase'] == true
+  end
+  helper_method :knowledgebase?
+
+  def tickets?
+    AppSettings['settings.tickets'] == "1" || AppSettings['settings.tickets'] == true
+  end
+  helper_method :tickets?
+
+  def teams?
+    AppSettings['settings.teams'] == "1" || AppSettings['settings.teams'] == true
+  end
+  helper_method :teams?
+
+  def forums_enabled?
+    raise ActionController::RoutingError.new('Not Found') unless forums?
+  end
+
+  def knowledgebase_enabled?
+    raise ActionController::RoutingError.new('Not Found') unless knowledgebase?
+  end
+
+  def tickets_enabled?
+    raise ActionController::RoutingError.new('Not Found') unless tickets?
+  end
+
+  def topic_creation_enabled?
+    raise ActionController::RoutingError.new('Not Found') unless tickets? || forums?
+  end
+
+  protected
+
+  def configure_permitted_parameters
+    devise_parameter_sanitizer.for(:accept_invitation).concat [:name]
   end
 
   private
+
+  def add_root_breadcrumb
+    if controller_namespace_origin == 'admin'
+      add_breadcrumb :root, admin_root_url
+    else
+      add_breadcrumb :root
+    end
+  end
+
+  def controller_namespace_origin
+    controller_path.split('/').first
+  end
 
   def set_locale
     @browser_locale = http_accept_language.compatible_language_from(AppSettings['i18n.available_locales'])
@@ -46,15 +124,16 @@ class ApplicationController < ActionController::Base
   end
 
   def set_vars
-    # Configure griddler, mailer
-    Griddler.configuration.email_service = AppSettings["email.mail_service"].to_sym
+    # Configure griddler, mailer, cloudinary, recaptcha
+    Griddler.configuration.email_service = AppSettings["email.mail_service"].present? ? AppSettings["email.mail_service"].to_sym : :sendgrid
 
     ActionMailer::Base.smtp_settings = {
-        :address   => AppSettings["email.mail_smtp"],
-        :port      => AppSettings["email.mail_port"],
-        :user_name => AppSettings["email.smtp_mail_username"],
-        :password  => AppSettings["email.smtp_mail_password"],
-        :domain    => AppSettings["email.mail_domain"]
+        :address              => AppSettings["email.mail_smtp"],
+        :port                 => AppSettings["email.mail_port"],
+        :user_name            => AppSettings["email.smtp_mail_username"].presence,
+        :password             => AppSettings["email.smtp_mail_password"].presence,
+        :domain               => AppSettings["email.mail_domain"],
+        :enable_starttls_auto => !AppSettings["email.mail_smtp"].in?(["localhost", "127.0.0.1", "::1"])
     }
 
     ActionMailer::Base.perform_deliveries = to_boolean(AppSettings['email.send_email'])
@@ -63,6 +142,14 @@ class ApplicationController < ActionController::Base
       config.cloud_name = AppSettings['cloudinary.cloud_name'].blank? ? nil : AppSettings['cloudinary.cloud_name']
       config.api_key = AppSettings['cloudinary.api_key'].blank? ? nil : AppSettings['cloudinary.api_key']
       config.api_secret = AppSettings['cloudinary.api_secret'].blank? ? nil : AppSettings['cloudinary.api_secret']
+      config.secure = true
+    end
+
+    Recaptcha.configure do |config|
+      config.public_key  = AppSettings['settings.recaptcha_site_key'].blank? ? nil : AppSettings['settings.recaptcha_site_key']
+      config.private_key = AppSettings['settings.recaptcha_api_key'].blank? ? nil : AppSettings['settings.recaptcha_api_key']
+      # Uncomment the following line if you are using a proxy server:
+      # config.proxy = 'http://myproxy.com.au:8080'
     end
 
   rescue
@@ -76,44 +163,25 @@ class ApplicationController < ActionController::Base
     str == 'true'
   end
 
-  def fetch_counts
-    @new = Topic.unread.count
-    @unread = Topic.unread.count
-    @pending = Topic.mine(current_user.id).pending.count
-    @open = Topic.open.count
-    @active = Topic.active.count
-    @mine = Topic.mine(current_user.id).count
-    @closed = Topic.closed.count
-    @spam = Topic.spam.count
-
-    @admins = User.agents
+  def allow_iframe_requests
+    response.headers.delete('X-Frame-Options')
   end
 
-  def instantiate_tracker
-    # instantiate a tracker instance for GA Measurement Protocol
-    # this is used to track events happening on the server side, like email support ticket creation
-    # this is stored in the session, so first lets check if its in the session
-
-    if session[:client_id]
-      logger.info("initiate tracker with client id from session")
-      @tracker = Staccato.tracker(AppSettings['settings.google_analytics_id'], session[:client_id])
+  def theme_chosen
+    if params[:theme].present?
+      params[:theme]
     else
-      # not in the session, so check the url
-      if params[:client_id]
-        logger.info("initiate tracker with client id from params")
-        session[:client_id] = params[:client_id]
-        @tracker = Staccato.tracker(AppSettings['settings.google_analytics_id'], params[:client_id])
-      else
-        # this is a last resort and should not occur for regular web
-        # visits.
-        logger.info("!!! initiate tracker without client id !!!")
-        @tracker = Staccato.tracker(AppSettings['settings.google_analytics_id'])
-      end
+      AppSettings['theme.active'].present? ? AppSettings['theme.active'] : 'helpy'
     end
   end
 
-  def allow_iframe_requests
-    response.headers.delete('X-Frame-Options')
+  def set_time_zone(&block)
+    Time.use_zone(current_user.time_zone, &block)
+  end
+
+  def get_all_teams
+    return unless teams?
+    @all_teams = ActsAsTaggableOn::Tagging.all.where(context: "teams").includes(:tag).map{|tagging| tagging.tag.name.capitalize }.uniq
   end
 
 end

@@ -30,7 +30,7 @@ class HomeControllerTest < ActionController::TestCase
 
   test "a browsing user should see the correct template when visiting the home page" do
     get :index, locale: :en
-    assert_template layout: "layouts/application"
+    assert_template layout: "layouts/helpy"
   end
 
   # There are two categories in the test data, one is featured on home page
@@ -72,6 +72,59 @@ class HomeControllerTest < ActionController::TestCase
 
     #Should not be a category box
     assert_select "div.topic-box", true
+  end
+
+  test "a browsing user should not see common replies on the home page even if they are featured" do
+    AppSettings['theme.active'] = 'flat'
+    get :index, locale: :en
+
+    #Should not be any category boxes
+    assert_select "#category-5", false
+  end
+
+  # Theme tests, since there is no theme controller and this logic should exist helper_method
+
+  test "a browsing user should see the designated theme" do
+    # Set theme
+    AppSettings['theme.active'] = 'flat'
+
+    get :index, locale: :en
+    assert_template layout: 'flat'
+  end
+
+  test "a browsing user should see the default theme if no theme is designated" do
+    # Set no theme
+    AppSettings['theme.active'] = ''
+
+    get :index, locale: :en
+    assert_template layout: 'helpy'
+  end
+
+  test "a browsing user should see the theme passed in the url" do
+    # Set no theme
+    AppSettings['theme.active'] = 'helpy'
+
+    get :index, locale: :en, theme: 'flat'
+    assert_template layout: 'flat'
+  end
+
+  test "a browsing user should not get the get-help section if forums and tickets are disabled" do
+    AppSettings['settings.forums'] = "0"
+    AppSettings['settings.tickets'] = "0"
+    get :index, locale: :en
+    assert_select 'div#get-help-wrapper', false
+  end
+
+  test "a browsing user should get the get-help section if tickets are disabled" do
+    AppSettings['settings.tickets'] = "0"
+    get :index, locale: :en
+    assert_select 'div#get-help-wrapper', true
+  end
+
+  test "a browsing user should get the get-help section if forums are disabled" do
+    AppSettings['settings.forums'] = "0"
+    get :index, locale: :en
+    assert_select 'div#get-help-wrapper', true
   end
 
 end

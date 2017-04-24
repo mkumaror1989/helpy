@@ -21,6 +21,7 @@
 #  updated_at       :datetime         not null
 #  topics_count     :integer          default(0)
 #  allow_comments   :boolean          default(TRUE)
+#  attachments      :string           default([]), is an Array
 #
 
 require 'test_helper'
@@ -41,6 +42,11 @@ class DocsControllerTest < ActionController::TestCase
     assert_response :success
   end
 
+  test "a browsing user should NOT be able to see a document from common replies" do
+    get :show, id: 8, locale: "en"
+    assert_response :redirect
+  end
+
   test "a browsing user should be able to show a document with comments if cloudinary is configured" do
 
     # Make sure cloudinary cloud name is setup
@@ -50,6 +56,13 @@ class DocsControllerTest < ActionController::TestCase
 
     get :show, id: 6, locale: "en"
     assert_response :success
+  end
+
+  test "a browsing user should not be able to see a doc page if KB features are not enabled" do
+    AppSettings['settings.knowledgebase'] = "0"
+    assert_raises(ActionController::RoutingError) do
+      get :show, id: 1, locale: :en
+    end
   end
 
 end

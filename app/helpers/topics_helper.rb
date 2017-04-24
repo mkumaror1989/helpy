@@ -22,25 +22,27 @@
 #  updated_at       :datetime         not null
 #  locale           :string
 #  doc_id           :integer          default(0)
+#  channel          :string           default("email")
+#  kind             :string           default("ticket")
 #
 
 module TopicsHelper
 
   def badge_for_status(status)
-    content_tag(:span, status_label(status).upcase, class: "hidden-xs pull-right status-label label #{status_class(status)}")
+    content_tag(:span, status_label(status), class: "hidden-xs pull-right status-label label #{status_class(status)}")
   end
 
   def badge_for_private
-    content_tag(:span, t(:private, default: 'PRIVATE').upcase, class: 'hidden-xs pull-right status-label label label-private')
+    content_tag(:span, t(:private, default: 'PRIVATE'), class: 'hidden-xs pull-right status-label label label-private')
   end
 
   def control_for_status(status)
-    content_tag(:span, "#{status_label(status).upcase} <span class='caret'></span> ".html_safe, class: "btn status-label label #{status_class(status)}")
+    content_tag(:span, "#{status_label(status)} <span class='caret'></span> ".html_safe, class: "change-status btn status-label-button label #{status_class(status)}")
   end
 
   def control_for_privacy(private_flag)
     str = private_flag ? t(:private, default: 'PRIVATE') : t(:public, default: 'PUBLIC')
-    content_tag(:span, "#{str} <span class='caret'></span> ".html_safe, class: 'btn privacy-label label label-info')
+    content_tag(:span, "#{str} <span class='caret'></span> ".html_safe, class: 'btn status-label-button change-privacy privacy-label label label-info')
   end
 
   def status_label(status)
@@ -81,5 +83,25 @@ module TopicsHelper
     end
   end
 
+  # Lookup the user set color, if it exists
+  def badge_color_from_tag(tag_name)
+    tagging = ActsAsTaggableOn::Tag.where('lower(name) = ?', tag_name.downcase).first
+    tagging.present? && tagging.color.present? ? 'background-color: ' + tagging.color : ''
+  end
+
+  def badge_color_from_topic(topic)
+    return '' if topic.team_list.blank?
+
+    tagging = ActsAsTaggableOn::Tag.where('lower(name) = ?', topic.team_list.first.downcase)
+    return badge_color_from_tag(tagging.first.name) unless tagging.nil?
+  end
+
+  def all_teams
+    ActsAsTaggableOn::Tagging.all.where(context: "teams").includes(:tag).where("context = 'teams' and tags.show_on_helpcenter = ?", 'true').references(:tags).map{|tagging| tagging.tag.name.capitalize }.uniq
+  end
+
+  def color_sample(tag_name)
+    content_tag(:div, '', style: badge_color_from_tag(tag_name), class: 'color-sample label-' + tag_name.first.downcase) + content_tag(:div, tag_name.try(:titleize))
+  end
 
 end

@@ -1,6 +1,6 @@
 # Simplecov to give a report of the test coverage on local development environment
 require 'simplecov'
-SimpleCov.start
+SimpleCov.start 'rails'
 
 #require 'codeclimate-test-reporter'
 #CodeClimate::TestReporter.start
@@ -11,17 +11,35 @@ require 'rails/test_help'
 # Requiring this library causes your jobs to run everything inline. So a call to the following
 # will actually be SYNCHRONOUS
 require 'sucker_punch/testing/inline'
+require 'pry'
 
 class ActiveSupport::TestCase
   # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
   fixtures :all
 
   # Add more helper methods to be used by all tests here...
-  Settings.send_email = false
+  # Settings.send_email = false
 end
 
 class ActionController::TestCase
   include Devise::TestHelpers
+end
+
+def file
+  @file ||= File.open(File.expand_path('test/fixtures/files/logo.png'))
+end
+
+def uploaded_file_object(klass, attribute, file, content_type = 'image/png')
+
+  filename = File.basename(file.path)
+  klass_label = klass.to_s.underscore
+
+  ActionDispatch::Http::UploadedFile.new(
+    tempfile: file,
+    filename: filename,
+    head: %Q{Content-Disposition: form-data; name="#{klass_label}[#{attribute}]"; filename="#{filename}"},
+    content_type: content_type
+  )
 end
 
 def set_default_settings
@@ -38,6 +56,11 @@ def set_default_settings
   AppSettings['settings.product_name'] = Settings.product_name
   AppSettings['settings.support_phone'] = Settings.support_phone
   AppSettings['settings.google_analytics_id'] = Settings.google_analytics_id
+  AppSettings["settings.forums"] = true
+  AppSettings["settings.tickets"] = true
+  AppSettings["settings.knowledgebase"] = true
+  AppSettings["settings.teams"] = true
+  AppSettings["settings.welcome_email"] = true
   AppSettings['design.favicon'] = Settings.app_favicon
   AppSettings['design.header_logo'] = Settings.app_mini_logo
   AppSettings['design.footer_mini_logo'] = Settings.app_large_logo
@@ -55,10 +78,20 @@ def set_default_settings
   AppSettings['email.mail_service'] = Settings.mail_service
   AppSettings['email.smtp_mail_username'] = Settings.smtp_mail_username
   AppSettings['email.smtp_mail_password'] = Settings.smtp_mail_password
-  AppSettings['email.mail_smtp'] = Settings.mail_smtp
-  AppSettings['email.mail_port'] = Settings.mail_port
+  AppSettings['email.mail_smtp'] = '127.0.0.1' # Settings.mail_smtp
+  AppSettings['email.mail_port'] = 1025 # Settings.mail_port
   AppSettings['email.mail_domain'] = Settings.mail_domain
   AppSettings['cloudinary.cloud_name'] = ''
   AppSettings['cloudinary.api_key'] = ''
-  AppSettings['cloudinary.api_secret'] = ''  
+  AppSettings['cloudinary.api_secret'] = ''
+  AppSettings['theme.active'] = 'helpy'
+
+  # assign all agents to receive notifications
+  User.agents.each do |a|
+    a.notify_on_private = true
+    a.notify_on_public = true
+    a.notify_on_reply = true
+    a.save!
+  end
+
 end
